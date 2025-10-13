@@ -6,6 +6,8 @@ import AdminPage from './pages/admin_page/admin';
 import MainPage from './pages/main_page/main';
 import SearchPage from './pages/search_page/search';
 import PersonalPage from './pages/personal_page/personal';
+import InventoryPage from './pages/inventory_page/inventory';
+import ItemsPage from './pages/items_page/items';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
@@ -29,6 +31,8 @@ function App() {
         <Route path="/main" element={<MainPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/personal" element={<PersonalPage />} />
+        <Route path="/inventory" element={<InventoryPage />} />
+        <Route path="/items" element={<ItemsPage />} />
       </Routes>
     </Router>
   );
