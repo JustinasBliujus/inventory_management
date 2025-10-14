@@ -11,8 +11,7 @@ import ItemsPage from './pages/items_page/items';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 function App() {
-  //const [count, setCount] = useState(0)
-
+  
   const fetchAPI = async () => {
     const response = await axios.get('http://localhost:3000/api');
     console.log(response.data.fruits);

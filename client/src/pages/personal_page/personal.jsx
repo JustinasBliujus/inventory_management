@@ -1,37 +1,18 @@
 import SharedNavbar from '../components/navbar';
-import Table from 'react-bootstrap/Table';
-import { useState } from "react";
-import Dropdown from 'react-bootstrap/Dropdown';
-import Form from 'react-bootstrap/Form';
-import Pagination from 'react-bootstrap/Pagination';
+import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import DataTable from '../components/dataTable'; 
+import Dropdown from 'react-bootstrap/Dropdown';
+import { Container } from 'react-bootstrap';
 
 function PersonalPage() {
     const navigate = useNavigate();
-
     const [filter, setFilter] = useState(null);
-
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-    const [accessSortConfig, setAccessSortConfig] = useState({ key: 'name', direction: 'asc' });
 
     const handlePublicityClick = (value) => {
         setFilter(value);
-    };
-
-    const handleSort = (key, dataset = "personal") => {
-        if (dataset === "personal") {
-            setSortConfig(prev => ({
-                key,
-                direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-            }));
-        } else {
-            setAccessSortConfig(prev => ({
-                key,
-                direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-            }));
-        }
     };
 
     const data = [
@@ -57,30 +38,59 @@ function PersonalPage() {
     ];
 
     const filteredAccess = filter ? access.filter(item => item.publicity === filter) : access;
+    const personalColumns = [
+        { key: 'checkbox', label: '', render: () => <input type="checkbox" /> },
+        { key: 'name', label: 'Name', sortable: true, render: (value) => <a className="text-decoration-none" href='/inventory'>{value}</a> },
+        { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
+        { key: 'items', label: 'Items', sortable: true },
+        { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
+    ];
 
-    const sortData = (data, config) => {
-        if (!config.key) return data;
-        return [...data].sort((a, b) => {
-            if (a[config.key] < b[config.key]) return config.direction === 'asc' ? -1 : 1;
-            if (a[config.key] > b[config.key]) return config.direction === 'asc' ? 1 : -1;
-            return 0;
-        });
-    };
-
-    const sortedData = sortData(data, sortConfig);
-    const sortedAccess = sortData(filteredAccess, accessSortConfig);
-
-    const getSortArrow = (config, key) => {
-        if (config.key !== key) return '';
-        return config.direction === 'asc' ? '↓' : '↑';
-    };
+    const accessColumns = [
+    { 
+        key: 'name', 
+        label: 'Name', 
+        sortable: true, 
+        render: (value) => <a style={{ textDecoration: 'none' }} href='/inventory'>{value}</a> 
+    },
+    { 
+        key: 'description', 
+        label: 'Description', 
+        sortable: true, 
+        className: 'd-none d-sm-table-cell' 
+    },
+    { 
+        key: 'publicity', 
+        label: (
+            <Dropdown>
+                <Dropdown.Toggle 
+                    as="div" 
+                    style={{ cursor: 'pointer', userSelect: 'none', width: '100%', textAlign: 'center' }}
+                >
+                    Publicity
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                    <Dropdown.Item onClick={() => handlePublicityClick('public')}>Show public</Dropdown.Item>
+                    <Dropdown.Item onClick={() => handlePublicityClick('private')}>Show private</Dropdown.Item>
+                    <Dropdown.Item onClick={() => handlePublicityClick(null)}>Show all</Dropdown.Item>
+                </Dropdown.Menu>
+            </Dropdown>
+        ),
+        className: 'text-center'
+    },
+    { 
+        key: 'owner', 
+        label: 'Owner', 
+        sortable: true, 
+        className: 'd-none d-sm-table-cell text-decoration-none', 
+        render: (value) => <a href='/personal'>{value}</a> 
+    }
+];
 
     return (
-        <div className='vh-100 p-5 d-flex align-items-center justify-content-center'>
+        <Container className="mt-5 p-5">
             <SharedNavbar />
-            <div className='mt-5 h-100 w-75'>
-                {/* --- Your Inventories --- */}
-                <div>
+                <div className="mb-5">
                     <p className="fs-1">Your Inventories</p>
                     <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
                         <Button variant="danger" onClick={() => alert("Delete user")} title="Delete">
@@ -90,97 +100,14 @@ function PersonalPage() {
                             <FaPlus color='white' />
                         </Button>
                     </div>
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr>
-                                <th><Form.Check type="checkbox" /></th>
-                                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                                    Name {getSortArrow(sortConfig, 'name')}
-                                </th>
-                                <th className='d-none d-sm-table-cell' onClick={() => handleSort('description')} style={{ cursor: 'pointer' }}>
-                                    Description {getSortArrow(sortConfig, 'description')}
-                                </th>
-                                <th onClick={() => handleSort('items')} style={{ cursor: 'pointer' }}>
-                                    Items {getSortArrow(sortConfig, 'items')}
-                                </th>
-                                <th className='d-none d-sm-table-cell' onClick={() => handleSort('created')} style={{ cursor: 'pointer' }}>
-                                    Created {getSortArrow(sortConfig, 'created')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedData.map((inventory, index) => (
-                                <tr key={index}>
-                                    <td><Form.Check type="checkbox" /></td>
-                                    <td><a style={{ textDecoration: "none" }} href='/inventory'>{inventory.name}</a></td>
-                                    <td className='d-none d-sm-table-cell'>{inventory.description}</td>
-                                    <td>{inventory.items}</td>
-                                    <td className='d-none d-sm-table-cell'>{inventory.created}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                    <div className="d-flex justify-content-center mt-3">
-                        <Pagination>
-                            <Pagination.First />
-                            <Pagination.Prev />
-                            <Pagination.Item active>{12}</Pagination.Item>
-                            <Pagination.Next />
-                            <Pagination.Last />
-                        </Pagination>
-                    </div>
+                    <DataTable data={data} columns={personalColumns} itemsPerPage={5} />
                 </div>
 
-                {/* --- Access Table --- */}
                 <div>
                     <p className="fs-1">You have access to</p>
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('name', 'access')} style={{ cursor: 'pointer' }}>
-                                    Name {getSortArrow(accessSortConfig, 'name')}
-                                </th>
-                                <th className='d-none d-sm-table-cell' onClick={() => handleSort('description', 'access')} style={{ cursor: 'pointer' }}>
-                                    Description {getSortArrow(accessSortConfig, 'description')}
-                                </th>
-                                <th className="text-center align-middle d-inline-flex align-items-center justify-content-center w-100">
-                                    <Dropdown>
-                                        <Dropdown.Toggle size="sm">Filter</Dropdown.Toggle>
-                                        <Dropdown.Menu>
-                                            <Dropdown.Item onClick={() => handlePublicityClick('public')}>Show public</Dropdown.Item>
-                                            <Dropdown.Item onClick={() => handlePublicityClick('private')}>Show private</Dropdown.Item>
-                                            <Dropdown.Item onClick={() => handlePublicityClick(null)}>Show all</Dropdown.Item>
-                                        </Dropdown.Menu>
-                                    </Dropdown>
-                                </th>
-                                <th className='d-none d-sm-table-cell' onClick={() => handleSort('owner', 'access')} style={{ cursor: 'pointer' }}>
-                                    Owner {getSortArrow(accessSortConfig, 'owner')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedAccess.map((inventory, index) => (
-                                <tr key={index}>
-                                    <td><a style={{ textDecoration: "none" }} href='/inventory'>{inventory.name}</a></td>
-                                    <td className='d-none d-sm-table-cell'>{inventory.description}</td>
-                                    <td className='d-none d-sm-table-cell'>{inventory.publicity}</td>
-                                    <td><a style={{ textDecoration: "none" }} href='/personal'>{inventory.owner}</a></td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                    <div className="d-flex justify-content-center mt-3">
-                        <Pagination>
-                            <Pagination.First />
-                            <Pagination.Prev />
-                            <Pagination.Item active>{12}</Pagination.Item>
-                            <Pagination.Next />
-                            <Pagination.Last />
-                        </Pagination>
-                    </div>
+                    <DataTable data={filteredAccess} columns={accessColumns} itemsPerPage={5} />
                 </div>
-            </div>
-        </div>
+        </Container>
     );
 }
 

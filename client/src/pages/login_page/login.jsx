@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { useNavigate } from 'react-router-dom';
+import GoogleButton from 'react-google-button';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -35,9 +36,16 @@ function LoginPage() {
             />
           </Form.Group>
 
-          <Button variant="primary" type="submit" className="w-100 mb-3" size="lg">
+          <Button variant="primary" type="submit" className="w-100 mb-4" size="lg">
             Login
           </Button>
+
+          <p className="text-center text-muted mb-3">or login with other accounts</p>
+
+          {/* Social login buttons */}
+          <div className="d-flex flex-column gap-2 align-items-center mb-3">
+            <GoogleButton />
+          </div>
 
           <Form.Text className="d-block text-center">
             <a href="/register">Don't have an account yet?</a>

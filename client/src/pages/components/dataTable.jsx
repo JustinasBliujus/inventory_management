@@ -1,0 +1,82 @@
+import { useState } from 'react';
+import Table from 'react-bootstrap/Table';
+import Pagination from 'react-bootstrap/Pagination';
+
+function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const handleSort = (key) => {
+    setSortConfig(prev => ({
+      key,
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortArrow = (key) => {
+    if (sortConfig.key !== key) return '';
+    return sortConfig.direction === 'asc' ? '↓' : '↑';
+  };
+
+  const sortedData = [...data].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
+  const paginatedData = sortedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  return (
+    <div>
+      <Table striped bordered hover responsive className="mb-0">
+        <thead>
+          <tr>
+            {columns.map(col => (
+              <th
+                key={col.key}
+                onClick={() => col.sortable && handleSort(col.key)}
+                style={{ cursor: col.sortable ? 'pointer' : 'default' }}
+                className={col.className || ''}
+              >
+                {col.label} {col.sortable && getSortArrow(col.key)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.map((row, index) => (
+            <tr key={row.id || index} onClick={() => onRowClick && onRowClick(row)}>
+              {columns.map(col => (
+                <td key={col.key} className={col.className || ''}>
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      <div className="d-flex justify-content-center mt-3">
+        <Pagination>
+          <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+          <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} />
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Pagination.Item
+              key={i + 1}
+              active={currentPage === i + 1}
+              onClick={() => setCurrentPage(i + 1)}
+            >
+              {i + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} />
+          <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+        </Pagination>
+      </div>
+    </div>
+  );
+}
+
+export default DataTable;
