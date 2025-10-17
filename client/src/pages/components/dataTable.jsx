@@ -13,16 +13,17 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
     }));
   };
 
-  const getSortArrow = (key) => {
-    if (sortConfig.key !== key) return '';
-    return sortConfig.direction === 'asc' ? '↓' : '↑';
-  };
-
   const sortedData = [...data].sort((a, b) => {
     if (!sortConfig.key) return 0;
-    if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
+
+    const aVal = a[sortConfig.key]?.toString().toLowerCase();
+    const bVal = b[sortConfig.key]?.toString().toLowerCase();
+
+    if (!aVal || !bVal) return 0; 
+
+    if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+    return 0; 
   });
 
   const totalPages = Math.ceil(sortedData.length / itemsPerPage);
@@ -40,7 +41,16 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
                 style={{ cursor: col.sortable ? 'pointer' : 'default' }}
                 className={col.className || ''}
               >
-                {col.label} {col.sortable && getSortArrow(col.key)}
+                {col.header ? (
+                  <>
+                    {col.header}
+                    {col.sortable && sortConfig.key === col.key ? (sortConfig.direction === 'asc' ? '↓' : '↑') : ''}
+                  </>
+                ) : (
+                  <>
+                    {col.label} {col.sortable && sortConfig.key === col.key ? (sortConfig.direction === 'asc' ? '↓' : '↑') : ''}
+                  </>
+                )}
               </th>
             ))}
           </tr>

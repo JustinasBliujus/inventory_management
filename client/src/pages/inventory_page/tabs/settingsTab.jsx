@@ -8,7 +8,7 @@ function SettingsTab({ itemsData }) {
 
     const handleSave = () => {
         alert(`Saved settings:\nName: ${name}\nDescription: ${description}`);
-        // SAVE API
+       
     };
 
     return (

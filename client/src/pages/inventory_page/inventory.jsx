@@ -13,6 +13,13 @@ import CustomIdTab from './tabs/customId/customIdTab';
 function InventoryPage() {
     const [isMobile, setIsMobile] = useState(false);
     const [activeTab, setActiveTab] = useState("items");
+    
+    // const [messages, setMessages] = useState();
+    // const [name, setName]
+    // const [description, setDescription]
+    // const [fields, setFields]
+    // const [access, setAccess]
+
 
     const inv = {
             name: "Golfing",
