@@ -34,11 +34,11 @@ export const ELEMENT_TOOLTIPS = {
     'Sequential number that increments automatically each time the ID is generated.',
 };
 export const FIELD_TYPES = [
-  'single-line',
-  'multi-line',
-  'numeric',
-  'document',
-  'boolean',
+  'line',
+  'multiline',
+  'number',
+  'url',
+  'bool',
 ];
 
 export const FIELD_TOOLTIPS = {

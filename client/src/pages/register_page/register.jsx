@@ -36,14 +36,11 @@ function RegisterPage() {
       const name = credential.given_name || '';     
       const surname = credential.family_name || '';  
       const email = credential.email;
-
-      console.log(name, surname, email);
-
       await userService.registerGoogle({ name, surname, email });
-
       navigate('/login', { state: { success: { message: "Registration successful! Please login." } } });
 
     } catch (err) {
+      console.error("Error from registerGoogle:", err.response?.data || err.message);
       setError(err.response?.data?.message || "Registration failed!");
     }
   }

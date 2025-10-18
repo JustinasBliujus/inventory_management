@@ -1,43 +1,48 @@
+import React, { useState, useEffect } from 'react';
 import DataTable from '../../components/dataTable';
 import { useNavigate } from 'react-router-dom';
 import { FaTrash, FaPlus } from 'react-icons/fa';
 import Button from 'react-bootstrap/Button';
 
-function ItemsTab({ itemsData }) {
+function ItemsTab({ inventory, setInventory }) {
   const navigate = useNavigate();
+  const [columns, setColumns] = useState([]);
 
-  const columns = [
-    {
-      key: 'checkbox',
-      label: '',
-      render: () => <input type="checkbox" />,
-    },
-    {
-      key: 'name',
-      label: 'Name',
-      sortable: true,
-      render: (value, row) => (
-        <span
-          style={{ color: 'blue', cursor: 'pointer' }}
-          className='text-decoration-none'
-          onClick={() => navigate('/items', { state: { item: row } })}
-        >
-          {value}
-        </span>
-      )
-    },
-    {
-      key: 'description',
-      label: 'Description',
-      sortable: true,
-      className: 'd-none d-sm-table-cell'
-    },
-    {
-      key: 'quantity',
-      label: 'Quantity',
-      sortable: true
+  useEffect(() => {
+
+    const baseColumns = [
+      {
+        key: 'checkbox',
+        label: '',
+        render: () => <input type="checkbox" />,
+      },
+    ];
+
+    const customColumns = [];
+
+    if (inventory) {
+      const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
+
+      for (let type of customTypes) {
+        for (let i = 1; i <= 3; i++) {
+          const showKey = `custom_${type}${i}_show`;
+          const nameKey = `custom_${type}${i}_name`;
+
+          if (inventory[showKey]) {
+            customColumns.push({
+              key: `${type}${i}`,
+              label: inventory[nameKey] || `Custom ${type} ${i}`,
+              render: (value, row) => row[`${type}${i}`] ?? '',
+            });
+          }
+        }
+      }
     }
-  ];
+
+    setColumns([...baseColumns, ...customColumns]);
+  }, [inventory]);
+
+  const itemsData = inventory?.items || [];
 
   return (
     <div>
@@ -45,7 +50,7 @@ function ItemsTab({ itemsData }) {
         <Button variant="danger" onClick={() => alert("Delete user")} title="Delete">
           <FaTrash color='white' />
         </Button>
-        <Button variant="success" onClick={() => navigate('/items')} title="Create New Inventory">
+        <Button variant="success" onClick={() => navigate('/items')} title="Create New Item">
           <FaPlus color='white' />
         </Button>
       </div>

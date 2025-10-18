@@ -6,13 +6,38 @@ import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/dataTable'; 
 import Dropdown from 'react-bootstrap/Dropdown';
 import { Container } from 'react-bootstrap';
+import { userService } from '../../api/userService';
 
 function PersonalPage() {
+    const [error, setError] = useState("");
     const navigate = useNavigate();
     const [filter, setFilter] = useState(null);
 
     const handlePublicityClick = (value) => {
         setFilter(value);
+    };
+
+    const handleCreateInventory = async () => {
+    try {
+        const data = {
+            name: "New Inventory",
+            customID: "",
+            description: "",
+            customFields: {}  
+        };
+
+        const response = await userService.createInventory({
+            name: data.name,
+            customID: data.customID,
+        });
+
+        console.log("INVNETORY IDDD " +response.data.inventoryId)
+
+        navigate('/inventory', { state: response.data.inventoryId });
+    } catch (err) {
+      console.error("Error:", err.response?.data || err.message);
+      setError(err.response?.data?.message || "Creation failed!");
+    }
     };
 
     const data = [
@@ -92,11 +117,16 @@ function PersonalPage() {
             <SharedNavbar />
                 <div className="mb-5">
                     <p className="fs-1">Your Inventories</p>
+
+                    {error && (<div className="alert alert-danger" role="alert">
+                        {error}
+                    </div>)}
+
                     <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
                         <Button variant="danger" onClick={() => alert("Delete user")} title="Delete">
                             <FaTrash color='white' />
                         </Button>
-                        <Button variant="success" onClick={() => navigate('/inventory')} title="Create New Inventory">
+                        <Button variant="success" onClick={handleCreateInventory} title="Create New Inventory">
                             <FaPlus color='white' />
                         </Button>
                     </div>

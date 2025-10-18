@@ -1,22 +1,21 @@
 export const defaultNewField = (type) => ({
   type,
   title: '',
-  description: '',
-  showInTable: false,
+  showInTable: true,
 });
 
 export const renderFieldPreview = (field) => {
   switch (field.type) {
-    case 'single-line':
+    case 'line':
       return field.title || 'Example text';
-    case 'multi-line':
+    case 'multiline':
       return field.title ? `Example for ${field.title}` : 'Multi-line example text\nAnother line';
-    case 'numeric':
-      return Math.floor(Math.random() * 100); // random number for preview
-    case 'document':
-      return 'https://example.com/file.pdf'; // sample document/image link
-    case 'boolean':
-      return Math.random() > 0.5 ? '✔️' : '❌'; // checkbox preview
+    case 'number':
+      return Math.floor(Math.random() * 100); 
+    case 'url':
+      return 'https://example.com/file.pdf'; 
+    case 'bool':
+      return Math.random() > 0.5 ? '✔️' : '❌';
     default:
       return '';
   }

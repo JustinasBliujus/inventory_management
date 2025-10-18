@@ -1,37 +1,44 @@
-import express from 'express'
-import cors from 'cors'
-import { createDatabase } from './createDatabase.js';
-import router from './routes/router.js';
-import session from 'express-session'
+
+import express from 'express';
+import cors from 'cors';
+import session from 'express-session';
 import cookieParser from 'cookie-parser';
+import router from './routes/router.js';
+import db from './db.js';
 import bodyParser from 'body-parser';
+import dotenv from 'dotenv';
 
+dotenv.config();
 const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(cors({ 
-    origin: "http://localhost:5173", 
-    credentials: true,
-    
-}));
-app.use(cookieParser())
-app.use(bodyParser.urlencoded({extended: true}));
 
-createDatabase();
+ app.use(cors({ 
+     origin: "http://localhost:5173", 
+     credentials: true 
+ }));
 
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'supersecretkey',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: false,  
-    }
-}));
+ app.use(express.json());
+ app.use(express.urlencoded({ extended: true }));
+ app.use(bodyParser.urlencoded({extended: true}));
+ app.use(cookieParser());
 
-app.use('/', router); 
+ db.sync()
+   .then(() => console.log("All models synchronized successfully."))
+   .catch(err => console.error("Error syncing models:", err));
 
-app.listen(process.env.PORT, () => {
-    console.log("server started");
-})
+ app.use(session({
+     secret: process.env.SESSION_SECRET || 'supersecretkey',
+     resave: false,
+     saveUninitialized: false,
+     cookie: {
+         httpOnly: true,
+         sameSite: 'lax',
+         secure: false
+     }
+ }));
+
+app.use('/', router);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server started on port ${PORT}`);
+});

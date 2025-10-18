@@ -1,29 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import ReactMarkdown from 'react-markdown';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
 
-function ChatTab() {
-    const [posts, setPosts] = useState([
-        {
-            id: 1,
-            userName: 'Alice',
-            userId: 101,
-            content: 'Hello everyone! **Welcome** to the Golfing inventory discussion.',
-            createdAt: new Date('2025-10-13T12:00:00')
-        },
-        {
-            id: 2,
-            userName: 'Bob',
-            userId: 102,
-            content: 'I love the new *drivers* we got recently.',
-            createdAt: new Date('2025-10-13T12:05:00')
-        }
-    ]);
-
+function ChatTab({ inventory, setInventory }) {
+    const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState("");
+
+    useEffect(() => {
+        if (inventory?.chats) {
+            const mappedPosts = inventory.chats.map(chat => ({
+                id: chat.id,
+                userName: chat.creator_email, 
+                userId: chat.userId || chat.creator_email,
+                content: chat.content || '',
+                createdAt: chat.createdAt ? new Date(chat.createdAt) : new Date()
+            }));
+            setPosts(mappedPosts);
+        }
+    }, [inventory]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -37,8 +34,26 @@ function ChatTab() {
             createdAt: new Date()
         };
 
-        setPosts([...posts, nextPost]);
+        const updatedPosts = [...posts, nextPost];
+        setPosts(updatedPosts);
         setNewPost("");
+
+        if (setInventory) {
+            const updatedInventory = {
+                ...inventory,
+                chats: [
+                    ...(inventory.chats || []),
+                    {
+                        id: nextPost.id,
+                        creator_email: nextPost.userName,
+                        content: nextPost.content,
+                        createdAt: nextPost.createdAt
+                    }
+                ]
+            };
+            console.log(updatedInventory)
+            setInventory(updatedInventory);
+        }
     };
 
     const markdownHint = (
@@ -59,14 +74,15 @@ function ChatTab() {
             <h4>Discussion</h4>
 
             <div 
-            className="mb-3" 
-            style={{
-                maxHeight: '40vh',
-                overflowY: 'auto',
-                border: '1px solid #ddd',
-                borderRadius: '8px',
-                padding: '8px',
-            }}>
+                className="mb-3" 
+                style={{
+                    maxHeight: '40vh',
+                    overflowY: 'auto',
+                    border: '1px solid #ddd',
+                    borderRadius: '8px',
+                    padding: '8px',
+                }}
+            >
                 {posts.map(post => (
                     <div key={post.id} className="mb-3 p-2 border rounded">
                         <div className="mb-1">

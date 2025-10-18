@@ -2,7 +2,7 @@ import axiosInstance from './axiosInstance';
 
 export const userService = {
   register: (userData) => axiosInstance.post('/register', userData),
-  registerGoogle: (userData) => axiosInstance.post('/registerGoogle', userData),
+  registerGoogle: async (userData) => axiosInstance.post('/registerGoogle', userData),
   login: (credentials) => axiosInstance.post('/login', credentials),
   loginGoogle: (credentials) => axiosInstance.post('/loginGoogle', credentials),
   isLoggedIn: () => axiosInstance.get('/isLoggedIn'),
@@ -13,5 +13,7 @@ export const userService = {
   promoteUsers: (data) => axiosInstance.post('/admin/promote', data),
   demoteUsers: (data) => axiosInstance.post('/admin/demote', data),
   deleteUsers: (data) => axiosInstance.delete('/admin/delete', {data}),
-  deleteUnverifiedUsers: () => axiosInstance.delete('/admin/unverified')
+  deleteUnverifiedUsers: () => axiosInstance.delete('/admin/unverified'),
+  createInventory: (data) => axiosInstance.post('/createInventory', data),
+  getInventory: (inventoryId) => axiosInstance.get(`/getInventory/${inventoryId}`)
 };

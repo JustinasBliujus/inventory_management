@@ -10,7 +10,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
   const placeholderText = field.type; 
 
   switch (field.type) {
-    case 'single-line':
+    case 'line':
       return (
         <Form.Group className="mb-3" controlId={`input-${index}`}>
           <Form.Label title={field.description}>{field.description}</Form.Label>
@@ -23,7 +23,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
         </Form.Group>
       );
 
-    case 'multi-line':
+    case 'multiline':
       return (
         <Form.Group className="mb-3" controlId={`textarea-${index}`}>
           <Form.Label title={field.description}>{field.description}</Form.Label>
@@ -37,7 +37,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
         </Form.Group>
       );
 
-    case 'numeric':
+    case 'number':
       return (
         <Form.Group className="mb-3" controlId={`input-number-${index}`}>
           <Form.Label title={field.description}>{field.description}</Form.Label>
@@ -50,7 +50,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
         </Form.Group>
       );
 
-    case 'document':
+    case 'url':
       return (
         <Form.Group className="mb-3" controlId={`input-document-${index}`}>
           <Form.Label title={field.description}>{field.description}</Form.Label>
@@ -63,7 +63,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
         </Form.Group>
       );
 
-    case 'boolean':
+    case 'bool':
       return (
         <Form.Group className="mb-3" controlId={`checkbox-${index}`}>
           <Form.Check

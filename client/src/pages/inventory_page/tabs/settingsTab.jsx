@@ -1,14 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 
-function SettingsTab({ itemsData }) {
-    const [name, setName] = useState(itemsData.name || '');
-    const [description, setDescription] = useState(itemsData.description || '');
+function SettingsTab({ inventory, setInventory }) {
+    const [name, setName] = useState(inventory.name || '');
+    const [description, setDescription] = useState(inventory.description || '');
+
+    useEffect(() => {
+        console.log(inventory)
+        setName(inventory.name || '');
+        setDescription(inventory.description || '');
+    }, [inventory]);
 
     const handleSave = () => {
-        alert(`Saved settings:\nName: ${name}\nDescription: ${description}`);
-       
+        setInventory(prev => ({
+            ...prev,
+            name,
+            description
+        }));
     };
 
     return (
@@ -16,7 +25,7 @@ function SettingsTab({ itemsData }) {
             <h4>General Settings</h4>
             <Form>
                 <Form.Group className="mb-3" controlId="inventoryName">
-                    <Form.Label>Inventory Name</Form.Label>
+                    <Form.Label>Name</Form.Label>
                     <Form.Control
                         type="text"
                         value={name}

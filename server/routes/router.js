@@ -1,16 +1,25 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
-import { getUsers, blockUsers, createUser, createUserGoogle, getUserByEmail, updateLoginTime, unblockUsers, deleteUsers, deleteUnverified, verifyUser, findUserByToken, promoteUsers, demoteUsers } from '../database.js';
+import { 
+    getUsers, createUser, 
+    createUserGoogle, getUserByEmail, updateLoginTime,
+    verifyUser, findUserByToken,  
+} from '../databaseService/userService.js';
+import { getInventoryById } from '../databaseService/inventoryService.js';
 import { sendVerificationEmail } from './mailer.js';
 import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { requireLogin, requireAdmin, requireUnblocked } from './middlewares.js';
+import adminRoutes from './adminRoutes.js';
+import {createInventory} from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
 const SALT_ROUNDS = 10;
 
 dotenv.config();
 const router = Router();
+
+router.use('/admin', adminRoutes);
 
 router.post('/loginGoogle', async (req, res) => {
     const { email } = req.body;
@@ -22,7 +31,7 @@ router.post('/loginGoogle', async (req, res) => {
         });
     }
     try {
-        req.session.user = { email: user.email, status: user.status, is_admin: user.is_admin };
+        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin };
 
         await updateLoginTime(user.email);
 
@@ -60,7 +69,7 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        req.session.user = { email: user.email, status: user.status, is_admin: user.is_admin };
+        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin };
 
         await updateLoginTime(user.email);
 
@@ -91,173 +100,40 @@ router.get('/getUsers', requireLogin(), requireUnblocked(), requireAdmin(), asyn
   }
 });
 
-router.post('/admin/block', requireLogin(),requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-        const emails = req.body.emails;
-        if (!emails || emails.length === 0) {
-            return res.status(400).json({ message: 'No emails provided' });
-        }
-
-        const result = await blockUsers(emails);
-
-        if (emails.includes(req.session.user.email)) {
-            req.session.destroy(err => {
-                if (err) console.error('Failed to destroy session:', err);
-                return res.status(200).json({ message: 'You have blocked yourself. Session ended.' });
-            });
-            return;
-        }
-        
-        res.json({ result, message: 'User(s) blocked successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to block user(s)' });
-    }
-});
-
-router.post('/admin/unblock', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-        const emails = req.body.emails;
-        if (!emails || emails.length === 0) {
-            return res.status(400).json({ message: 'No emails provided' });
-        }
-
-        const result = await unblockUsers(emails);
-        res.json({ result, message: 'User(s) unblocked successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to unblock user(s)' });
-    }
-});
-
-router.post('/admin/promote', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-        const emails = req.body.emails;
-        console.log(emails)
-        if (!emails || emails.length === 0) {
-            return res.status(400).json({ message: 'No emails provided' });
-        }
-
-        const result = await promoteUsers(emails);
-        res.json({ result, message: 'User(s) promoted successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to promote user(s)' });
-    }
-});
-
-router.post('/admin/demote', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-        const emails = req.body.emails;
-        if (!emails || emails.length === 0) {
-            return res.status(400).json({ message: 'No emails provided' });
-        }
-        
-        const result = await demoteUsers(emails);
-
-        if (emails.includes(req.session.user.email)) {
-            req.session.destroy(err => {
-                if (err) console.error('Failed to destroy session:', err);
-                return res.status(200).json({ message: 'You have demoted yourself. Session ended.' });
-            });
-            return;
-        }
-
-        res.json({ result, message: 'User(s) demoted successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to demote user(s)' });
-    }
-});
-
-router.delete('/admin/delete', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-        const emails = req.body.emails;
-        if (!emails || emails.length === 0) {
-            return res.status(400).json({ message: 'No emails provided' });
-        }
-        
-        const result = await deleteUsers(emails);
-
-        if (emails.includes(req.session.user.email)) {
-            req.session.destroy(err => {
-                if (err) console.error('Failed to destroy session:', err);
-                return res.status(200).json({ message: 'You have deleted yourself. Session ended.' });
-            });
-            return;
-        }
-
-        res.json({ result, message: 'User(s) deleted successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to delete user(s)' });
-    }
-});
-
-router.delete('/admin/unverified', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
-    try {
-
-        const result = await deleteUnverified();
-
-        if (req.session.user.status === 'unverified') {
-            req.session.destroy(err => {
-                if (err) console.error('Failed to destroy session:', err);
-                return res.status(200).json({ message: 'You have deleted yourself. Session ended.' });
-            });
-            return;
-        }
-
-        res.json({ result, message: 'User(s) deleted successfully' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Failed to delete user(s)' });
-    }
-});
-
 router.post('/registerGoogle', async (req, res) => {
-    try {
-        const { name, surname, email, } = req.body;
-        const user = await getUserByEmail(email);
-        
-        const result = await createUserGoogle(name, surname, email);
+   try {
+     const { name, surname, email } = req.body;
 
-        if (result !== undefined) {
-            return res.status(201).json({ 
-                status: "success",
-                message: "User created successfully"
-            });
-        } else {
-            return res.status(400).json({ 
-                status: "error",
-                message: "User failed to create" 
-            });
-        }
+     if (!name || !surname || !email) {
+       return res.status(400).json({ status: "error", message: "Missing name, surname, or email" });
+     }
 
-    } catch (err) {
+     const user = await getUserByEmail(email);
 
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ 
-                status: "error",
-                message: "User already exists" 
-            });
-        }
+     const result = await createUserGoogle(name, surname, email);
 
-        return res.status(500).json({ 
-            status: "error",
-            message: "Internal server error" 
-        });
-    }
+     if (result) {
+       return res.status(201).json({ status: "success", message: "User created successfully" });
+     } else {
+       return res.status(400).json({ status: "error", message: "User failed to create" });
+     }
+
+   } catch (err) {
+     if (err.code === 'ER_DUP_ENTRY') {
+        return res.status(409).json({ status: "error", message: "User already exists" });
+     }
+     return res.status(500).json({ status: "error", message: "Internal server error" });
+   }
 });
+
 
 router.post('/register', async (req, res) => {
     try {
         const { name, surname, email, password } = req.body;
-
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
         const verificationToken = crypto.randomBytes(TOKEN_BYTES_LENGTH).toString('hex');
 
         const result = await createUser(name, surname, hashedPassword, email, verificationToken);
-
         if (result !== undefined) {
             sendVerificationEmail(email, verificationToken);
             return res.status(201).json({ 
@@ -302,7 +178,6 @@ router.get('/verify', async (req, res) => {
         if (user.status === 'blocked') {
             return res.status(403).send('User is blocked');
         }
-        console.log(user)
         await verifyUser(user.email);
 
         res.send('Your email has been verified! You can now log in.');
@@ -320,6 +195,31 @@ router.post('/logout', (req, res) => {
     res.clearCookie('connect.sid'); 
     res.sendStatus(200); 
   });
+});
+
+router.post('/createInventory', requireLogin(), requireUnblocked(), async (req, res) => {
+  const { name } = req.body;
+  const userID = req.session.user.id;
+
+  try {
+    const item = await createInventory(userID, name);
+
+    res.status(201).json({ status: 'success', inventoryId: item.inventoryId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ status: 'error', message: 'Failed to create inventory' });
+  }
+});
+
+router.get("/getInventory/:id", requireLogin(), async (req, res) => {
+  const { id } = req.params;
+  const userId = req.session.user.id;
+
+  const result = await getInventoryById(userId, id);
+
+  if (!result.success) return res.status(404).json(result);
+
+  res.json(result.inventory.dataValues);
 });
 
 export default router;

@@ -9,92 +9,37 @@ import StatsTab from './tabs/statsTab';
 import SettingsTab from './tabs/settingsTab';
 import FieldsTab from './tabs/fields/fieldsTab';
 import CustomIdTab from './tabs/customId/customIdTab';
+import { useLocation } from 'react-router-dom';
+import { userService } from '../../api/userService';
 
 function InventoryPage() {
     const [isMobile, setIsMobile] = useState(false);
     const [activeTab, setActiveTab] = useState("items");
-    
-    // const [messages, setMessages] = useState();
-    // const [name, setName]
-    // const [description, setDescription]
-    // const [fields, setFields]
-    // const [access, setAccess]
+    const location = useLocation();
+    const inventoryId = location.state;
+    const [inventory, setInventory] = useState(null);
+
+    useEffect(() => {
+        if (!inventoryId) return;
+
+        const fetchInventory = async () => {
+            try {
+                const res = await userService.getInventory(inventoryId);
+                setInventory(res.data); 
+            } catch (err) {
+                console.error(err);
+            }
+        };
 
 
-    const inv = {
-            name: "Golfing",
-            description: "Best golf sticks and accessories",
-            created: 2022,
-            items: [
-        {
-            id: 1,
-            name: "Laptop",
-            brand: "Dell",
-            price: 1200,
-            rating: 4.5,
-            quantity: 8,
-            creator: "Alice@gmail.com",
-            description: "High-performance laptop suitable for work and gaming.",
-            imageUrl: "https://source.unsplash.com/400x300/?laptop"
-        },
-        {
-            id: 2,
-            name: "Desktop PC",
-            brand: "HP",
-            price: 950,
-            rating: 4.2,
-            quantity: 5,
-            creator: "Bob@gmail.com",
-            description: "Reliable desktop computer with powerful specs for productivity.",
-            imageUrl: "https://media.istockphoto.com/id/1560833158/photo/game-controller-with-purple-lit-keyboard-amidst-various-wireless-devices.jpg?s=1024x1024&w=is&k=20&c=PZT8aGwdWUm6urdT1cuUGqk2zbw2yGVjXokIslte8Tc="
-        },
-        {
-            id: 3,
-            name: "Gaming Laptop",
-            brand: "Asus",
-            price: 1800,
-            rating: 4.8,
-            quantity: 3,
-            creator: "Alice@gmail.com",
-            description: "High-end gaming laptop with advanced graphics and speed.",
-            imageUrl: "https://source.unsplash.com/400x300/?gaming,laptop"
-        },
-        {
-            id: 4,
-            name: "Monitor",
-            brand: "Samsung",
-            price: 300,
-            rating: 4.4,
-            quantity: 12,
-            creator: "Bob@gmail.com",
-            description: "27-inch full HD monitor with vivid colors and fast response.",
-            imageUrl: "https://source.unsplash.com/400x300/?monitor,screen"
-        },
-        {
-            id: 5,
-            name: "Keyboard",
-            brand: "Logitech",
-            price: 80,
-            rating: 4.6,
-            quantity: 20,
-            creator: "Alice@gmail.com",
-            description: "Mechanical keyboard with comfortable keys and backlight.",
-            imageUrl: "https://source.unsplash.com/400x300/?keyboard,computer"
-        }
-    ],
-        editors: [
-            { email: "alice@gmail.com", name: "Alice" },
-            { email: "bob@gmail.com", name: "Bob" },
-            { email: "char@gmail.com", name: "Charlie" }
-        ]
-    };
-
+        fetchInventory();
+    }, [inventoryId]);
 
     const handleSelect = (eventKey) => setActiveTab(eventKey);
 
     useEffect(() => {
         const handleResize = () => setIsMobile(window.innerWidth < 768);
-        handleResize(); 
+        handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -133,16 +78,21 @@ function InventoryPage() {
                     </div>
                 )}
 
-                <p className="fs-1 mt-5">{inv.name} Inventory</p>
+                {inventory && (
+                    <>
+                        <p className="fs-1 mt-5">{inventory.name}</p>
+                        <p className="mt-1">{inventory.description}</p>
                 <div className="mt-4">
-                    {activeTab === "items" && <ItemsTab itemsData={inv.items} />}
-                    {activeTab === "chat" && <ChatTab />}
-                    {activeTab === "access" && <AccessTab itemsData={inv.editors}/>}
-                    {activeTab === "stats" && <StatsTab itemsData={inv.items}/>}
-                    {activeTab === "settings" && <SettingsTab itemsData={inv}/>}
-                    {activeTab === "customId" && <CustomIdTab/>}
-                    {activeTab === "fields" && <FieldsTab/>}
+                    {activeTab === "items" && <ItemsTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "chat" && <ChatTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "access" && <AccessTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "stats" && <StatsTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "settings" && <SettingsTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "customId" && <CustomIdTab inventory={inventory} setInventory={setInventory} />}
+                    {activeTab === "fields" && <FieldsTab inventory={inventory} setInventory={setInventory} />}
                 </div>
+                </>
+                )}
             </div>
         </div>
     );

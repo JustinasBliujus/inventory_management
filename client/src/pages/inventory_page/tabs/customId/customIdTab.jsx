@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import Button from 'react-bootstrap/Button';
@@ -10,7 +10,8 @@ import { renderPreview } from './components/renderPreview';
 import DraggableElement from './components/draggableElement';
 import Tooltip from 'react-bootstrap/Tooltip';
 
-function IdBuilderTab() {
+function IdBuilderTab({ inventory, setInventory }) {
+  
   const [elements, setElements] = useState([]);
   const scrollContainerRef = useRef(null);
 
@@ -20,6 +21,20 @@ function IdBuilderTab() {
     updated.splice(to, 0, moved);
     setElements(updated);
   };
+
+  useEffect(() => {
+    // Map elements to part_1..part_10
+    const customID = {};
+    elements.forEach((el, idx) => {
+      customID[`part_${idx + 1}`] = el.value || el.type; // adjust depending on your element object
+    });
+
+    // Update inventory state
+    setInventory({
+      ...inventory,
+      customID
+    });
+  }, [elements]);
 
   const updateElement = (index, newData) => {
     const updated = [...elements];

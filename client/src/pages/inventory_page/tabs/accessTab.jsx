@@ -1,97 +1,145 @@
-import { useState } from 'react';
-import Table from 'react-bootstrap/Table';
-import Form from 'react-bootstrap/Form';
+import { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
-import Pagination from 'react-bootstrap/Pagination';
-import { FaTrash, FaPlus } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import Form from 'react-bootstrap/Form';
+import { FaTrash, FaPlus, FaSave } from 'react-icons/fa';
+import DataTable from '../../components/dataTable';
 
-function AccessTab({ itemsData }) {
-    const navigate = useNavigate();
-    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-    const [isPublic, setIsPublic] = useState(false);
-    
-    const handleSort = (key) => {
-        setSortConfig(prev => ({
-            key,
-            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-        }));
+function AccessTab({ inventory, setInventory }) {
+  const [isPublic, setIsPublic] = useState(false);
+  const [editors, setEditors] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  
+  useEffect(() => {
+    if (!inventory) return;
+    setSelectAll(false);
+    setIsPublic(inventory.is_public || false);
+
+    if (inventory.editors && Array.isArray(inventory.editors)) {
+      const mappedEditors = inventory.editors.map(editor => ({
+        name: editor.name,
+        email: editor.email,
+        selected: false, 
+      }));
+      setEditors(mappedEditors);
+    }
+  }, [inventory]);
+
+  const handleAddEditor = () => {
+    setEditors(prev => [
+      ...prev,
+      { name: "test", email: `test${editors.length}@gmail.com`, selected: false }
+    ]);
+  };
+
+  const handleRemoveSelected = () => {
+    setEditors(prev => prev.filter(editor => !editor.selected));
+    setSelectAll(false);
+  };
+
+  const handleSelectAll = () => {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    setEditors(editors.map(editor => ({ ...editor, selected: newSelectAll })));
+  };
+
+  const handleSelectRow = (email) => {
+    setEditors(editors.map(editor => editor.email === email ? { ...editor, selected: !editor.selected } : editor));
+  };
+
+  const handleSave = () => {
+    const editorsWithoutSelected = editors.map(editor => ({
+        name: editor.name,
+        email: editor.email,
+    }))
+
+    const updatedInventory = {
+      ...inventory,
+      is_public: isPublic,
+      editors: editorsWithoutSelected
     };
+    setInventory(updatedInventory);
+    console.log('Updated inventory:', updatedInventory);
+  };
 
-    const getSortArrow = (config, key) => {
-        if (config.key !== key) return '';
-        return config.direction === 'asc' ? '↓' : '↑';
-    };
-    console.log(itemsData)
-    const sortedEditors = [...(itemsData|| [])].sort((a, b) => {
-        
-        if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
-        if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
-        return 0;
-    });
+  const columns = [
+    {
+        key: 'select',
+        label: '', 
+        render: (_, row) => (
+        <Form.Check
+            type="checkbox"
+            checked={row.selected}
+            onChange={() => handleSelectRow(row.email)}
+        />
+        ),
+        header: (
+        <Form.Check
+            type="checkbox"
+            checked={selectAll}
+            onChange={handleSelectAll}
+        />
+        )
+    },
+    {
+      key: 'name',
+      header: 'Name',
+      sortable: true,
+      render: (value, row) => (
+        <a href={`/personal/${row.name}`} style={{ textDecoration: 'none' }}>
+          {value}
+        </a>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      sortable: true,
+    },
+  ];
 
-    return (
-            <div>
-                <div className="d-flex align-items-center gap-4 mb-3">
-                    <h4 className="mb-0">Accessibility: {isPublic ? "Public" : "Private"}</h4>
-                    <Form.Check
-                        style={{ transform: "scale(1.5)" }}
-                        type="switch"
-                        id="public-switch"
-                        checked={isPublic}
-                        onChange={() => setIsPublic(!isPublic)}
-                />
-            </div>
+  return (
+    <div>
+      {/* Public/Private toggle */}
+      <div className="d-flex align-items-center gap-4 mb-3">
+        <h4 className="mb-0">
+          Accessibility: {isPublic ? 'Public' : 'Private'}
+        </h4>
+        <Form.Check
+          style={{ transform: 'scale(1.5)' }}
+          type="switch"
+          id="public-switch"
+          checked={isPublic}
+          onChange={() => setIsPublic(prev => !prev)}
+        />
+      </div>
 
-            <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-                <Button variant="danger" onClick={() => alert("Remove editor")} title="Remove">
-                    <FaTrash color='white' />
-                </Button>
-                <Button variant="success" onClick={() => navigate('/add-editor')} title="Add Editor">
-                    <FaPlus color='white' />
-                </Button>
-            </div>
+      {/* Action buttons */}
+      <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
+        <Button variant="danger" onClick={handleRemoveSelected}>
+          <FaTrash color="white" /> Remove
+        </Button>
+        <Button variant="success" onClick={handleAddEditor}>
+          <FaPlus color="white" /> Add Editor
+        </Button>
+      </div>
 
-            <h4>Editors with Access</h4>
-            <Table striped bordered hover responsive>
-                <thead>
-                    <tr>
-                        <th><Form.Check type="checkbox" /></th>
-                        <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>
-                            Name {getSortArrow(sortConfig, 'name')}
-                        </th>
-                        <th onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
-                            Email {getSortArrow(sortConfig, 'email')}
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sortedEditors.map((editor, index) => (
-                        <tr key={index}>
-                            <td><Form.Check type="checkbox" /></td>
-                            <td>
-                                <a style={{ textDecoration: "none" }} href={`/personal/${editor.name}`}>
-                                    {editor.name}
-                                </a>
-                            </td>
-                            <td>{editor.email}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </Table>
+      {/* Editors table */}
+      <h4>Editors with Access</h4>
+      <DataTable
+        data={editors}
+        columns={columns}
+        itemsPerPage={5}
+        onRowClick={(row) => console.log('Clicked:', row)}
+      />
 
-            <div className="d-flex justify-content-center mt-3">
-                <Pagination>
-                    <Pagination.First />
-                    <Pagination.Prev />
-                    <Pagination.Item active>{1}</Pagination.Item>
-                    <Pagination.Next />
-                    <Pagination.Last />
-                </Pagination>
-            </div>
-
-        </div>
-    );
+      {/* Save button */}
+      <div className="mt-3 text-end">
+        <Button variant="primary" onClick={handleSave}>
+          <FaSave className="me-2" /> Save Changes
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 export default AccessTab;
