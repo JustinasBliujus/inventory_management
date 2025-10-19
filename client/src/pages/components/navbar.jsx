@@ -9,8 +9,9 @@ import { FaUser } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import Form from 'react-bootstrap/Form';
 
-function SharedNavbar() {
+function SharedNavbar({ onSearch }) {
     const [darkMode, setDarkMode] = useState(false);
+    const [query, setQuery] = useState("");
 
     useEffect(() => {
         document.body.className = darkMode ? 'bg-dark text-white' : 'bg-light text-dark';
@@ -18,36 +19,45 @@ function SharedNavbar() {
 
     const toggleTheme = () => setDarkMode(prev => !prev);
 
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (onSearch) onSearch(query);
+    };
+
     return (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 1000 }}>
             <Navbar expand="lg" className={darkMode ? 'navbar-dark bg-dark' : 'navbar-light bg-light'} style={{ borderBottom: darkMode ? '2px solid white' : '2px solid black' }}>
                 <Container>
                     <Navbar.Brand href="#home" className="d-none d-md-inline">Final Project</Navbar.Brand>
-         
-                    <Form className="d-flex me-auto" style={{ maxWidth: '300px' }}>
+                    
+                    {/* Search Form */}
+                    <Form className="d-flex me-auto" style={{ maxWidth: '300px' }} onSubmit={handleSubmit}>
                         <Form.Control
                             type="search"
                             placeholder="Search"
                             className="me-2"
                             aria-label="Search"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
                         />
                         <Button variant="outline-success" type="submit">Search</Button>
                     </Form>
 
                     <Navbar.Toggle aria-controls="basic-navbar-nav" />
                     <Navbar.Collapse id="basic-navbar-nav">
-               
                         <Nav className="ms-auto" style={{ alignItems: 'center', gap: '15px' }}>
-
+                            {/* User info */}
                             <div title="Admin" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                                 <FaUser size={24} color="green" />
                                 <Nav.Link href="#link" style={{ padding: 0 }}>Username</Nav.Link>
                             </div>
-                
+
+                            {/* Dark Mode Button */}
                             <Button onClick={toggleTheme} variant={darkMode ? 'outline-light' : 'outline-dark'}>
                                 {darkMode ? 'Light Mode' : 'Dark Mode'}
                             </Button>
-   
+
+                            {/* Language Dropdown */}
                             <DropdownButton
                                 title="EN"
                                 variant='outline-primary'
@@ -57,6 +67,7 @@ function SharedNavbar() {
                                 <Dropdown.Item href="#action/2">LT</Dropdown.Item>
                             </DropdownButton>
 
+                            {/* Logout */}
                             <Button variant="outline-danger">Log out</Button>
                         </Nav>
                     </Navbar.Collapse>
@@ -65,5 +76,6 @@ function SharedNavbar() {
         </div>
     );
 }
+
 
 export default SharedNavbar;

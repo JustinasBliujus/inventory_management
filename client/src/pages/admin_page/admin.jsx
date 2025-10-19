@@ -1,118 +1,178 @@
-import React, { useState, useEffect } from 'react';
-import DataTable from '../components/dataTable';
-import { useNavigate } from 'react-router-dom';
-import { FaTrash, FaPlus } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import SharedNavbar from '../components/navbar';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import { FaLock, FaAngleDoubleUp, FaUnlock, FaAngleDoubleDown, FaTrash } from 'react-icons/fa';
+import { FaPersonCircleXmark } from "react-icons/fa6";
+import DataTable from '../components/dataTable';
+import { Container, Spinner, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { userService } from '../../api/userService';
+import { useNavigate } from 'react-router-dom';
 
-function ItemsTab({ inventory, setInventory }) {
+function AdminPage() {
   const navigate = useNavigate();
 
-  const [itemsData, setItemsData] = useState([]);
+  const [users, setUsers] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
-  const [columns, setColumns] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
-  // Initialize items and add 'selected' state
   useEffect(() => {
-    if (inventory?.items) {
-      const itemsWithSelection = inventory.items.map(item => ({
-        ...item,
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await userService.getUsers();
+      const usersArray = res.data.users.map(u => ({
+        ...u,
         selected: false,
+        id: u.id,
+        name: u.name || '-',
+        surname: u.surname || '-',
+        email: u.email || '-',
+        status: u.status || '-',
+        is_admin: u.is_admin == 1 ? 'True' : "False",
+        last_login: u.last_login || '-'
       }));
-      setItemsData(itemsWithSelection);
+      setUsers(usersArray);
       setSelectAll(false);
-    }
-  }, [inventory]);
-
-  // Build columns dynamically whenever inventory changes
-  useEffect(() => {
-    const baseColumns = [
-      {
-        key: 'select',
-        label: '',
-        render: (_, row) => (
-          <Form.Check
-            type="checkbox"
-            checked={row.selected || false}
-            onChange={() => handleSelectRow(row)}
-          />
-        ),
-        header: (
-          <Form.Check
-            type="checkbox"
-            checked={selectAll}
-            onChange={handleSelectAll}
-          />
-        ),
-      },
-    ];
-
-    const customColumns = [];
-    if (inventory) {
-      const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
-      for (let type of customTypes) {
-        for (let i = 1; i <= 3; i++) {
-          const showKey = `custom_${type}${i}_show`;
-          const nameKey = `custom_${type}${i}_name`;
-          if (inventory[showKey]) {
-            customColumns.push({
-              key: `${type}${i}`,
-              label: inventory[nameKey] || `Custom ${type} ${i}`,
-              render: (value, row) => row[`${type}${i}`] ?? '',
-            });
-          }
-        }
+    } catch (err) {
+      if (err.response && err.response.status === 401) {
+        navigate('/login', {
+          state: { error: { message: 'Your session has expired. Please log in again.' } }
+        });
+      } else {
+        setError('Failed to fetch users');
+        console.error(err);
       }
+    } finally {
+      setLoading(false);
     }
+  };
 
-    setColumns([...baseColumns, ...customColumns]);
-  }, [inventory, selectAll]);
-
-  // Toggle header selectAll
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
-    setItemsData(prev =>
-      prev.map(item => ({ ...item, selected: newSelectAll }))
-    );
+    setUsers(users.map(user => ({ ...user, selected: newSelectAll })));
   };
 
-  // Toggle individual row selection
-  const handleSelectRow = (row) => {
-    setItemsData(prev =>
-      prev.map(item =>
-        item === row ? { ...item, selected: !item.selected } : item
-      )
-    );
-    // Update header checkbox if all are selected
-    const allSelected =
-      itemsData.every(item => item.selected) && !row.selected;
+  const handleSelectRow = (id) => {
+    setUsers(users.map(user => user.id === id ? { ...user, selected: !user.selected } : user));
+    const allSelected = users.every(u => u.id === id ? !u.selected : u.selected);
     setSelectAll(allSelected);
   };
 
+  const performAction = async (action) => {
+    const selectedUsers = users.filter(u => u.selected);
+    if (selectedUsers.length === 0 && action !== 'unverified') {
+      setError("Please select at least one user.");
+      return;
+    }
+
+    const emails = selectedUsers.map(u => u.email);
+
+    try {
+      setError(null);
+      setSuccess(null);
+
+      switch(action) {
+        case "block":
+          await userService.blockUsers({ emails });
+          setSuccess("User(s) blocked successfully");
+          break;
+        case "unblock":
+          await userService.unblockUsers({ emails });
+          setSuccess("User(s) unblocked successfully");
+          break;
+        case "promote":
+          await userService.promoteUsers({ emails });
+          setSuccess("User(s) promoted to admin");
+          break;
+        case "demote":
+          await userService.demoteUsers({ emails });
+          setSuccess("User(s) demoted from admin");
+          break;
+        case "delete":
+          await userService.deleteUsers({ emails });
+          setSuccess("User(s) deleted");
+          break;
+        case "unverified":
+          await userService.deleteUnverifiedUsers();
+          setSuccess("All unverified users deleted");
+          break;
+        default:
+          break;
+      }
+
+      fetchUsers();
+    } catch (err) {
+      setError("Action failed. Try again.");
+      console.error(err);
+    }
+  };
+
+  const columns = [
+    {
+      key: 'select',
+      label: <Form.Check type="checkbox" checked={selectAll} onChange={handleSelectAll} />,
+      render: (_, row) => <Form.Check type="checkbox" checked={row.selected} onChange={() => handleSelectRow(row.id)} />
+    },
+    { key: 'id', label: '#', sortable: true, className: 'd-none d-sm-table-cell' },
+    { key: 'name', label: 'First Name', sortable: true, className: 'd-none d-sm-table-cell' },
+    { key: 'surname', label: 'Last Name', sortable: true, className: 'd-none d-sm-table-cell' },
+    { key: 'email', label: 'Email', sortable: true },
+    { key: 'status', label: 'Status', sortable: true },
+    { key: 'is_admin', label: 'Admin', sortable: true },
+    { key: 'last_login', label: 'Last Login', sortable: true, className: 'd-none d-lg-table-cell' }
+  ];
+
+  if (loading) {
+    return (
+      <div className="vh-100 d-flex justify-content-center align-items-center">
+        <Spinner animation="border" />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-        <Button
-          variant="danger"
-          onClick={() => alert("Delete selected items")}
-          title="Delete"
-        >
-          <FaTrash color='white' />
-        </Button>
-        <Button
-          variant="success"
-          onClick={() => navigate('/items')}
-          title="Create New Item"
-        >
-          <FaPlus color='white' />
-        </Button>
+    <Container className="mt-5 p-5">
+      <SharedNavbar />
+
+      {error && <Alert variant="danger">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
+      <div className="d-flex gap-2 mb-3 mt-3 flex-wrap">
+        <OverlayTrigger placement="top" overlay={<Tooltip>Block selected users</Tooltip>}>
+          <Button variant="primary" onClick={() => performAction("block")}><FaLock color="white" /></Button>
+        </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Unblock selected users</Tooltip>}>
+          <Button variant="success" onClick={() => performAction("unblock")}><FaUnlock color="white" /></Button>
+        </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Promote selected users to admin</Tooltip>}>
+          <Button variant="info" onClick={() => performAction("promote")}><FaAngleDoubleUp color="white" /></Button>
+        </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Demote selected admins</Tooltip>}>
+          <Button variant="warning" onClick={() => performAction("demote")}><FaAngleDoubleDown color="white" /></Button>
+        </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Delete selected users</Tooltip>}>
+          <Button variant="danger" onClick={() => performAction("delete")}><FaTrash color="white" /></Button>
+        </OverlayTrigger>
+
+        <OverlayTrigger placement="top" overlay={<Tooltip>Delete all unverified users</Tooltip>}>
+          <Button variant="secondary" onClick={() => performAction("unverified")}><FaPersonCircleXmark color="white" /></Button>
+        </OverlayTrigger>
       </div>
 
-      <h4>Items</h4>
-      <DataTable data={itemsData} columns={columns} />
-    </div>
+      <DataTable data={users} columns={columns} itemsPerPage={10} />
+    </Container>
   );
 }
 
-export default ItemsTab;
+export default AdminPage;

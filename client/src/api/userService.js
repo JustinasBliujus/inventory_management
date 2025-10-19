@@ -15,5 +15,16 @@ export const userService = {
   deleteUsers: (data) => axiosInstance.delete('/admin/delete', {data}),
   deleteUnverifiedUsers: () => axiosInstance.delete('/admin/unverified'),
   createInventory: (data) => axiosInstance.post('/createInventory', data),
-  getInventory: (inventoryId) => axiosInstance.get(`/getInventory/${inventoryId}`)
+  getInventory: (inventoryId) => axiosInstance.get(`/getInventory/${inventoryId}`),
+  saveInventory: (inventory) => axiosInstance.post(`/saveInventory`, inventory),
+  saveCustomID: (customID) => axiosInstance.post('/saveCustomID', { customID }),
+  saveChat: (data) => axiosInstance.post(`/saveChat`, data),
+  getUsersInventories: () => axiosInstance.get(`/getUsersInventories`),
+  getEditableInventories: () => axiosInstance.get(`/getEditableInventories`),
+  deleteInventory: (inventoryId) => axiosInstance.post('/deleteInventory', { inventoryId }),
+  addEditor: (data) => axiosInstance.post('/addEditor', {data}),
+  deleteEditor: (inventoryId) => axiosInstance.post('/deleteEditor', { inventoryId }),
+  addItem: (inventoryId, itemData) => axiosInstance.post('/addItem', { inventoryId, itemData }),
+  searchUsersByEmail: (email) => axiosInstance.post('/search', { email }),
+  deleteitem: (item_id, inv_id, creator_id) => axiosInstance.post('/deleteItem', { item_id, inv_id, creator_id }),
 };

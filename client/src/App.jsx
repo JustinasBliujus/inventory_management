@@ -6,6 +6,7 @@ import SearchPage from './pages/search_page/search';
 import PersonalPage from './pages/personal_page/personal';
 import InventoryPage from './pages/inventory_page/inventory';
 import ItemsPage from './pages/items_page/items';
+import AddItemsPage from './pages/inventory_page/tabs/add_items_page';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './privateRoute';
 
@@ -63,6 +64,14 @@ function App() {
           element={
             <PrivateRoute>
               <ItemsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/addItem"
+          element={
+            <PrivateRoute>
+              <AddItemsPage />
             </PrivateRoute>
           }
         />

@@ -4,7 +4,7 @@ import { Card, Spinner } from 'react-bootstrap';
 
 function ItemsPage() {
     const location = useLocation();
-    const { item } = location.state || {}; // get item passed via state
+    const { item } = location.state || {};
     const [imgLoaded, setImgLoaded] = useState(false);
 
     if (!item) return <div>No item data found!</div>;

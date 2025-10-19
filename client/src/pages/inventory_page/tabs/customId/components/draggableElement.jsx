@@ -62,7 +62,7 @@ function DraggableElement({
   const ref = (node) => dragRef(dropRef(node));
 
   const handleChange = (key, value) => {
-    updateElement(index, { ...element, [key]: value });
+    updateElement(index, key, value);
   };
 
   return (
@@ -87,7 +87,13 @@ function DraggableElement({
         />
       )}
 
-      {element.type.includes('random number') && (
+      {['20-bit random number', '32-bit random number'].includes(element.type) && (
+        <Form.Group className="mt-2">
+          <Form.Label>Value</Form.Label>
+        </Form.Group>
+      )}
+
+      {['20-bit random number', '32-bit random number'].includes(element.type) && (
         <Form.Group className="mt-2">
           <Form.Label>Format</Form.Label>
           <Form.Select

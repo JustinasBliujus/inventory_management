@@ -5,7 +5,6 @@ import Pagination from 'react-bootstrap/Pagination';
 function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
-
   const handleSort = (key) => {
     setSortConfig(prev => ({
       key,
@@ -31,7 +30,7 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
 
   return (
     <div>
-      <Table striped bordered hover responsive className="mb-0">
+      <Table striped bordered hover responsive>
         <thead>
           <tr>
             {columns.map(col => (

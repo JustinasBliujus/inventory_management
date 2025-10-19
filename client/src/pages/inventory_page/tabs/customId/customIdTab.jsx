@@ -5,10 +5,10 @@ import Button from 'react-bootstrap/Button';
 import Card from 'react-bootstrap/Card';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import { ELEMENT_TYPES, MAX_ELEMENTS, ELEMENT_TOOLTIPS } from '../constants';
-import { defaultNewElement } from './components/elementUtils';
-import { renderPreview } from './components/renderPreview';
+import { createNewElement, renderValue } from './components/elementUtils';
 import DraggableElement from './components/draggableElement';
 import Tooltip from 'react-bootstrap/Tooltip';
+import { userService } from '../../../../api/userService';
 
 function IdBuilderTab({ inventory, setInventory }) {
   
@@ -23,32 +23,73 @@ function IdBuilderTab({ inventory, setInventory }) {
   };
 
   useEffect(() => {
-    // Map elements to part_1..part_10
-    const customID = {};
-    elements.forEach((el, idx) => {
-      customID[`part_${idx + 1}`] = el.value || el.type; // adjust depending on your element object
-    });
+    console.log(inventory)
+    if (!inventory?.customID) return;
 
-    // Update inventory state
-    setInventory({
-      ...inventory,
-      customID
-    });
-  }, [elements]);
+    const newElements = [];
 
-  const updateElement = (index, newData) => {
+    for (let i = 0; i < 10; i++) {
+      const type = inventory.customID[`part_${i + 1}_type`];
+      const format = inventory.customID[`part_${i + 1}_format`];
+      const value = inventory.customID[`part_${i + 1}_value`];
+
+      if (type) {
+        newElements.push({ type, format, value });
+      } else {
+        newElements.push(null); 
+      }
+    }
+    const filteredElements = newElements.filter(el => el !== null);
+
+    setElements(filteredElements);
+  }, [inventory]);
+
+
+    const updateElement = (index, key, value) => {
     const updated = [...elements];
-    updated[index] = newData;
+    const el = { ...updated[index] };
+
+    el[key] = value;
+
+    if (key === 'format' || key === 'type') {
+      el.value = renderValue(el);
+    }
+
+    updated[index] = el;
     setElements(updated);
   };
+
 
   const removeElement = (index) => {
     setElements(elements.filter((_, i) => i !== index));
   };
 
   const addElement = (type) => {
-    setElements([...elements, defaultNewElement(type)]);
+    setElements([...elements, createNewElement(type)]);
   };
+
+const handleSave = async () => {
+  if (!inventory) return;
+
+  const updatedInventory = { ...inventory };
+
+  if (!updatedInventory.customID) updatedInventory.customID = {};
+  updatedInventory.customID.inventory_id = updatedInventory.id;
+
+  for (let i = 0; i < 10; i++) {
+    const el = elements[i];
+    updatedInventory.customID[`part_${i + 1}_type`] = el ? el.type : null;
+    updatedInventory.customID[`part_${i + 1}_format`] = el ? el.format : null;
+    updatedInventory.customID[`part_${i + 1}_value`] = el ? el.value : null;
+  }
+  try {
+    const response = await userService.saveCustomID(updatedInventory.customID);
+    console.log(response.data);
+  } catch (err) {
+    console.error(err);
+  }
+  setInventory(updatedInventory);
+};
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -57,7 +98,6 @@ function IdBuilderTab({ inventory, setInventory }) {
         <p>
           Configure the ID structure by combining elements (max {MAX_ELEMENTS}).<br/>Drag to reorder, click × or drag out to remove.
         </p>
-
         <div className="d-flex flex-wrap gap-2 mb-3">
           {ELEMENT_TYPES.map((t) => (
             <OverlayTrigger
@@ -85,10 +125,14 @@ function IdBuilderTab({ inventory, setInventory }) {
             </OverlayTrigger>
           ))}
         </div>
-        
-        <h5 className="mt-4">Preview ID:</h5>
+        <Button variant="success" onClick={handleSave}>
+            Save Custom ID
+        </Button>
+        <h5 className="mt-3">Preview ID:</h5>
         <Card className="p-2 mb-3">
-          {elements.map(renderPreview).join('-') || (
+          {elements.length > 0 ? (
+            elements.map(el => el.value).join('-')
+          ) : (
             <span className="text-muted">No ID defined</span>
           )}
         </Card>

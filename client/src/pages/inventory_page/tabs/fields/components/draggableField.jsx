@@ -72,8 +72,8 @@ function DraggableField({ field, index, moveField, updateField, removeField, scr
       <Form.Control
         className="mt-2"
         placeholder="Description"
-        value={field.description}
-        onChange={(e) => handleChange('description', e.target.value)}
+        value={field.desc}
+        onChange={(e) => handleChange('desc', e.target.value)}
       />
 
       <Form.Check

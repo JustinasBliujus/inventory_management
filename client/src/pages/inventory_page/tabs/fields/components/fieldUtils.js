@@ -1,6 +1,7 @@
 export const defaultNewField = (type) => ({
   type,
   title: '',
+  desc: '',
   showInTable: true,
 });
 

@@ -4,6 +4,7 @@ import Button from 'react-bootstrap/Button';
 import ReactMarkdown from 'react-markdown';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
+import { userService } from '../../../api/userService';
 
 function ChatTab({ inventory, setInventory }) {
     const [posts, setPosts] = useState([]);
@@ -13,25 +14,44 @@ function ChatTab({ inventory, setInventory }) {
         if (inventory?.chats) {
             const mappedPosts = inventory.chats.map(chat => ({
                 id: chat.id,
-                userName: chat.creator_email, 
-                userId: chat.userId || chat.creator_email,
-                content: chat.content || '',
+                userName: chat.creator_email,
+                content: chat.message,
                 createdAt: chat.createdAt ? new Date(chat.createdAt) : new Date()
             }));
             setPosts(mappedPosts);
         }
     }, [inventory]);
 
-    const handleSubmit = (e) => {
+    const handleSaveChat = async (message) => {
+        if (!message || !inventory) return;
+
+        const payload = {
+            inventory_id: inventory.id,
+            message
+        };
+
+        try {
+            const result = await userService.saveChat(payload);
+            console.log("Chat saved:", result.data);
+            return result.data.chat; 
+        } catch (err) {
+            console.error("Failed to save chat:", err);
+            return null;
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!newPost.trim()) return;
 
+        const savedChat = await handleSaveChat(newPost.trim());
+        if (!savedChat) return; 
+
         const nextPost = {
-            id: posts.length + 1,
+            id: savedChat.id,
             userName: 'You',
-            userId: 999,
-            content: newPost,
-            createdAt: new Date()
+            content: savedChat.message,
+            createdAt: new Date(savedChat.createdAt)
         };
 
         const updatedPosts = [...posts, nextPost];
@@ -41,17 +61,8 @@ function ChatTab({ inventory, setInventory }) {
         if (setInventory) {
             const updatedInventory = {
                 ...inventory,
-                chats: [
-                    ...(inventory.chats || []),
-                    {
-                        id: nextPost.id,
-                        creator_email: nextPost.userName,
-                        content: nextPost.content,
-                        createdAt: nextPost.createdAt
-                    }
-                ]
+                chats: [...(inventory.chats || []), savedChat]
             };
-            console.log(updatedInventory)
             setInventory(updatedInventory);
         }
     };

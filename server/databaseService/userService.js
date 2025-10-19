@@ -1,3 +1,4 @@
+import Inventory from "../databaseModels/inventory.js";
 import User from "../databaseModels/user.js";
 import { Op } from "sequelize";
 
@@ -75,7 +76,6 @@ export async function verifyUser(email) {
 
 // Get user by email
 export async function getUserByEmail(email) {
-  console.log(email+'email')
   return await User.findOne({ where: { email } });
 }
 
@@ -113,4 +113,67 @@ export async function createUserGoogle(name, surname, email) {
     prev_status: 'verified'
   });
   return user;
+}
+
+export async function getUserInventories(userId) {
+  try {
+    const inventories = await Inventory.findAll({
+      where: { user_id: userId },
+    });
+    if (!inventories || inventories.length === 0) {
+      return { success: false, message: "No inventories found" };
+    }
+
+    return { success: true, inventories };
+  } catch (error) {
+    console.error("Error fetching inventories:", error);
+    return { success: false, error: error.message || error };
+  }
+}
+
+export async function getEditableInventories(userId) {
+  try {
+    const editableInventories = await Inventory.findAll({
+      include: [
+        {
+          model: User,
+          as: "editors",
+          where: { id: userId },
+          through: { attributes: [] } 
+        },
+   
+        {
+          model: User,
+          as: undefined, 
+          attributes: ['email'], 
+        }
+      ]
+    });
+
+    const inventoriesWithCreatorEmail = editableInventories.map(inv => ({
+      id: inv.id,
+      name: inv.name,
+      description: inv.description,
+      is_public: inv.is_public,
+      creatorEmail: inv.user?.email,
+      createdAt: inv.createdAt
+    }));
+
+    return { success: true, inventories: inventoriesWithCreatorEmail };
+  } catch (error) {
+    console.error("Error fetching editable inventories:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getUserByEmailPartial(email) {
+  return await User.findAll({
+    where: {
+      email: {
+        [Op.like]: `%${email}%`  
+      }
+    },
+    attributes: ["id", "name", "surname", "email"],
+    limit: 5
+  });
 }

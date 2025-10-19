@@ -16,6 +16,5 @@ Chat.belongsTo(Inventory, { foreignKey: "inventory_id", onDelete: "CASCADE" });
 Inventory.hasOne(CustomID, { foreignKey: "inventory_id", as: "customID", onDelete: "CASCADE" });
 CustomID.belongsTo(Inventory, { foreignKey: "inventory_id", onDelete: "CASCADE" });
 
-// Inventory ↔ Editors
 Inventory.belongsToMany(User, { through: "inventory_editors", as: "editors", foreignKey: "inventory_id", otherKey: "user_id" });
 User.belongsToMany(Inventory, { through: "inventory_editors", as: "editable_inventories", foreignKey: "user_id", otherKey: "inventory_id" });

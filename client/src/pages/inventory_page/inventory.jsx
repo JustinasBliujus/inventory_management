@@ -1,4 +1,5 @@
 import SharedNavbar from '../components/navbar';
+import Button from 'react-bootstrap/esm/Button';
 import Nav from 'react-bootstrap/Nav';
 import { useState, useEffect } from 'react';
 import { FaBox, FaComments, FaCog, FaIdCard, FaListAlt, FaUsers, FaChartBar } from 'react-icons/fa';
@@ -18,6 +19,28 @@ function InventoryPage() {
     const location = useLocation();
     const inventoryId = location.state;
     const [inventory, setInventory] = useState(null);
+
+    const handleSave = async () => {
+        if (!inventory) return;
+
+        const customFields = Object.fromEntries(
+            Object.entries(inventory).filter(([key]) => key.startsWith("custom_"))
+        );
+
+        const payload = {
+            inv_id: inventory.id,
+            creator_id: inventory.user_id,
+            name: inventory.name,
+            description: inventory.description,
+            is_public: inventory.is_public,
+            ...customFields
+        };
+
+        const result = await userService.saveInventory(payload);
+        console.log("Inventory saved:", result.data);
+        };
+
+
 
     useEffect(() => {
         if (!inventoryId) return;
@@ -82,6 +105,9 @@ function InventoryPage() {
                     <>
                         <p className="fs-1 mt-5">{inventory.name}</p>
                         <p className="mt-1">{inventory.description}</p>
+                        <Button variant="success" onClick={handleSave}>
+                            Save Inventory
+                        </Button>
                 <div className="mt-4">
                     {activeTab === "items" && <ItemsTab inventory={inventory} setInventory={setInventory} />}
                     {activeTab === "chat" && <ChatTab inventory={inventory} setInventory={setInventory} />}

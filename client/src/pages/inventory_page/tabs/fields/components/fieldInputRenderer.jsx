@@ -13,7 +13,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
     case 'line':
       return (
         <Form.Group className="mb-3" controlId={`input-${index}`}>
-          <Form.Label title={field.description}>{field.description}</Form.Label>
+          <Form.Label title={field.desc}>{field.desc}</Form.Label>
           <Form.Control
             type="text"
             placeholder={placeholderText}
@@ -26,7 +26,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
     case 'multiline':
       return (
         <Form.Group className="mb-3" controlId={`textarea-${index}`}>
-          <Form.Label title={field.description}>{field.description}</Form.Label>
+          <Form.Label title={field.desc}>{field.desc}</Form.Label>
           <Form.Control
             as="textarea"
             rows={4}
@@ -40,7 +40,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
     case 'number':
       return (
         <Form.Group className="mb-3" controlId={`input-number-${index}`}>
-          <Form.Label title={field.description}>{field.description}</Form.Label>
+          <Form.Label title={field.desc}>{field.desc}</Form.Label>
           <Form.Control
             type="number"
             placeholder={placeholderText}
@@ -53,7 +53,7 @@ export const renderFieldInput = (field, index, fields, setFields) => {
     case 'url':
       return (
         <Form.Group className="mb-3" controlId={`input-document-${index}`}>
-          <Form.Label title={field.description}>{field.description}</Form.Label>
+          <Form.Label title={field.desc}>{field.desc}</Form.Label>
           <Form.Control
             type="text"
             placeholder={placeholderText}
@@ -68,8 +68,8 @@ export const renderFieldInput = (field, index, fields, setFields) => {
         <Form.Group className="mb-3" controlId={`checkbox-${index}`}>
           <Form.Check
             type="checkbox"
-            label={field.description}
-            title={field.description}
+            label={field.desc}
+            title={field.dedsc}
             checked={field.value || false}
             onChange={(e) => handleChange(e.target.checked)}
           />

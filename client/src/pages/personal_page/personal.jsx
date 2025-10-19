@@ -1,142 +1,178 @@
 import SharedNavbar from '../components/navbar';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from 'react-bootstrap/Button';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/dataTable'; 
-import Dropdown from 'react-bootstrap/Dropdown';
 import { Container } from 'react-bootstrap';
 import { userService } from '../../api/userService';
 
 function PersonalPage() {
-    const [error, setError] = useState("");
     const navigate = useNavigate();
-    const [filter, setFilter] = useState(null);
+    const [inventories, setInventories] = useState([]);
+    const [editableInventories, setEditableInventories] = useState([]);
+    const [selectAll, setSelectAll] = useState(false);
+    const [error, setError] = useState(location.state?.error?.message || "");
+    const [success, setSuccess] = useState(location.state?.success?.message || "");
 
-    const handlePublicityClick = (value) => {
-        setFilter(value);
-    };
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [personalRes, editableRes] = await Promise.all([
+                    userService.getUsersInventories(),
+                    userService.getEditableInventories()
+                ]);
+
+                const personalSimplified = personalRes.data.inventories.map(inv => ({
+                    ...inv,
+                    id: inv.id,
+                    name: inv.name,
+                    description: inv.description,
+                    publicity: inv.is_public ? "Public" : "Private",
+                    created: inv.createdAt,
+                    selected: false
+                }));
+                setInventories(personalSimplified);
+
+                const editableSimplified = editableRes.data.inventories.map(inv => ({
+                    name: inv.name,
+                    description: inv.description,
+                    publicity: inv.is_public ? "Public" : "Private",
+                    owner: inv.creatorEmail,
+                    created: inv.createdAt
+                }));
+                setEditableInventories(editableSimplified);
+
+            } catch (err) {
+                console.error("Error fetching inventories:", err);
+            }
+        };
+        fetchData();
+    }, []);
 
     const handleCreateInventory = async () => {
-    try {
-        const data = {
-            name: "New Inventory",
-            customID: "",
-            description: "",
-            customFields: {}  
-        };
-
-        const response = await userService.createInventory({
-            name: data.name,
-            customID: data.customID,
-        });
-
-        console.log("INVNETORY IDDD " +response.data.inventoryId)
-
-        navigate('/inventory', { state: response.data.inventoryId });
-    } catch (err) {
-      console.error("Error:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Creation failed!");
-    }
+        try {
+            const response = await userService.createInventory({ name: "New Inventory", customID: "" });
+            navigate('/inventory', { state: response.data.inventoryId });
+        } catch (err) {
+            console.error("Error:", err.response?.data || err.message);
+            setError(err.response?.data?.message || "Creation failed!");
+        }
     };
 
-    const data = [
-        { name: "Golfing", description: "Best golf sticks", items: 32, created: 2022 },
-        { name: "Tennis", description: "High-quality tennis rackets", items: 20, created: 2021 },
-        { name: "Basketball", description: "Professional basketballs", items: 50, created: 2023 },
-        { name: "Swimming", description: "Premium swimwear and goggles", items: 40, created: 2020 },
-        { name: "Cycling", description: "Mountain and road bikes", items: 15, created: 2022 },
-        { name: "Running", description: "Comfortable running shoes", items: 60, created: 2023 },
-        { name: "Yoga", description: "Yoga mats and accessories", items: 25, created: 2021 },
-        { name: "Fishing", description: "Rods, reels, and bait", items: 18, created: 2020 }
-    ];
+    const handleSelectAll = () => {
+        const newSelectAll = !selectAll;
+        setSelectAll(newSelectAll);
+        setInventories(prev => prev.map(inv => ({ ...inv, selected: newSelectAll })));
+    };
 
-    const access = [
-        { name: "Golfing", description: "Best golf sticks", publicity: "public", owner: "Alice" },
-        { name: "Tennis", description: "High-quality tennis rackets", publicity: "private", owner: "Bob" },
-        { name: "Basketball", description: "Professional basketballs", publicity: "public", owner: "Charlie" },
-        { name: "Swimming", description: "Premium swimwear and goggles", publicity: "private", owner: "Diana" },
-        { name: "Cycling", description: "Mountain and road bikes", publicity: "public", owner: "Ethan" },
-        { name: "Running", description: "Comfortable running shoes", publicity: "private", owner: "Fiona" },
-        { name: "Yoga", description: "Yoga mats and accessories", publicity: "public", owner: "George" },
-        { name: "Fishing", description: "Rods, reels, and bait", publicity: "private", owner: "Hannah" }
-    ];
+    const handleSelectRow = (row) => {
+        setInventories(prev => {
+            const updated = prev.map(inv =>
+                inv === row ? { ...inv, selected: !inv.selected } : inv
+            );
+            setSelectAll(updated.every(inv => inv.selected));
+            return updated;
+        });
+    };
 
-    const filteredAccess = filter ? access.filter(item => item.publicity === filter) : access;
+    const handleDeleteSelected = async () => {
+        const selected = inventories.filter(inv => inv.selected);
+        if (selected.length === 0) {
+            setError("No inventories selected");
+            return;
+        }
+
+        try {
+            await Promise.all(
+                selected.map(inv => userService.deleteInventory(inv.id))
+            );
+
+            setInventories(prev => prev.filter(inv => !inv.selected));
+            setSelectAll(false);
+            setSuccess(`${selected.length} inventory(s) deleted successfully.`);
+        } catch (err) {
+            setError(err);
+            console.error("Error deleting inventories:", err);
+        }
+    };
+
+
     const personalColumns = [
-        { key: 'checkbox', label: '', render: () => <input type="checkbox" /> },
-        { key: 'name', label: 'Name', sortable: true, render: (value) => <a className="text-decoration-none" href='/inventory'>{value}</a> },
-        { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
-        { key: 'items', label: 'Items', sortable: true },
-        { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
-    ];
+    {
+        key: 'checkbox',
+        label: (
+            <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+            />
+        ),
+        render: (_, row) => (
+            <input
+                type="checkbox"
+                checked={row.selected || false}
+                onChange={() => handleSelectRow(row)}
+            />
+        )
+    },
+    {
+        key: 'name',
+        label: 'Name',
+        sortable: true,
+        render: (value, row) => (
+            <span
+                style={{ cursor: 'pointer', color: '#0d6efd', }}
+                onClick={() => navigate('/inventory', { state: row.id })}
+            >
+                {value}
+            </span>
+        )
+    },
+    { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
+    { key: 'publicity', label: 'Publicity', sortable: true, className: 'd-none d-sm-table-cell' },
+    { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
+];
+
 
     const accessColumns = [
-    { 
-        key: 'name', 
-        label: 'Name', 
-        sortable: true, 
-        render: (value) => <a style={{ textDecoration: 'none' }} href='/inventory'>{value}</a> 
-    },
-    { 
-        key: 'description', 
-        label: 'Description', 
-        sortable: true, 
-        className: 'd-none d-sm-table-cell' 
-    },
-    { 
-        key: 'publicity', 
-        label: (
-            <Dropdown>
-                <Dropdown.Toggle 
-                    as="div" 
-                    style={{ cursor: 'pointer', userSelect: 'none', width: '100%', textAlign: 'center' }}
-                >
-                    Publicity
-                </Dropdown.Toggle>
-                <Dropdown.Menu>
-                    <Dropdown.Item onClick={() => handlePublicityClick('public')}>Show public</Dropdown.Item>
-                    <Dropdown.Item onClick={() => handlePublicityClick('private')}>Show private</Dropdown.Item>
-                    <Dropdown.Item onClick={() => handlePublicityClick(null)}>Show all</Dropdown.Item>
-                </Dropdown.Menu>
-            </Dropdown>
-        ),
-        className: 'text-center'
-    },
-    { 
-        key: 'owner', 
-        label: 'Owner', 
-        sortable: true, 
-        className: 'd-none d-sm-table-cell text-decoration-none', 
-        render: (value) => <a href='/personal'>{value}</a> 
-    }
-];
+        { key: 'name', label: 'Name', sortable: true, render: (value) => <a style={{ textDecoration: 'none' }} href='/inventory'>{value}</a> },
+        { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
+        { key: 'publicity', label: 'Publicity', sortable: true, className: 'd-none d-sm-table-cell' },
+        { key: 'owner', label: 'Owner', sortable: true, render: (value) => <a href='/personal'>{value}</a> },
+        { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
+    ];
 
     return (
         <Container className="mt-5 p-5">
             <SharedNavbar />
-                <div className="mb-5">
-                    <p className="fs-1">Your Inventories</p>
+            <div className="mb-5">
 
-                    {error && (<div className="alert alert-danger" role="alert">
-                        {error}
-                    </div>)}
+                {error && (<div className="alert alert-danger" role="alert">
+                    {error}
+                </div>)}
 
-                    <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-                        <Button variant="danger" onClick={() => alert("Delete user")} title="Delete">
-                            <FaTrash color='white' />
-                        </Button>
-                        <Button variant="success" onClick={handleCreateInventory} title="Create New Inventory">
-                            <FaPlus color='white' />
-                        </Button>
-                    </div>
-                    <DataTable data={data} columns={personalColumns} itemsPerPage={5} />
+                {success && (<div className="alert alert-success" role="alert">
+                    {success}
+                </div>)}
+
+                <p className="fs-1">Your Inventories</p>
+                {error && (<div className="alert alert-danger" role="alert">{error}</div>)}
+                <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
+                    <Button variant="danger" onClick={handleDeleteSelected} title="Delete Selected">
+                        <FaTrash color='white' />
+                    </Button>
+                    <Button variant="success" onClick={handleCreateInventory} title="Create New Inventory">
+                        <FaPlus color='white' />
+                    </Button>
                 </div>
+                <DataTable data={inventories} columns={personalColumns} itemsPerPage={5} />
+            </div>
 
-                <div>
-                    <p className="fs-1">You have access to</p>
-                    <DataTable data={filteredAccess} columns={accessColumns} itemsPerPage={5} />
-                </div>
+            <div>
+                <p className="fs-1">You have access to</p>
+                <DataTable data={editableInventories} columns={accessColumns} itemsPerPage={5} />
+            </div>
         </Container>
     );
 }

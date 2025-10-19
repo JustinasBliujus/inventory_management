@@ -15,7 +15,6 @@ function FieldsTab({ inventory, setInventory }) {
   const [fields, setFields] = useState([]);
   const scrollContainerRef = useRef(null);
 
-  // ✅ Load existing fields from inventory
   useEffect(() => {
     if (!inventory) return;
 
@@ -28,6 +27,7 @@ function FieldsTab({ inventory, setInventory }) {
           loadedFields.push({
             type,
             title: inventory[`custom_${type}${i}_name`] || "",
+            desc: inventory[`custom_${type}${i}_desc`] || "",
             showInTable: inventory[`custom_${type}${i}_show`] || false,
           });
         }
@@ -68,6 +68,7 @@ function FieldsTab({ inventory, setInventory }) {
     const payload = fields.map(f => ({
       type: f.type,
       title: f.title,
+      desc: f.desc,
       showInTable: f.showInTable,
     }));
 
@@ -77,6 +78,7 @@ function FieldsTab({ inventory, setInventory }) {
     fieldTypes.forEach(type => {
       for (let i = 1; i <= 3; i++) {
         updatedInventory[`custom_${type}${i}_name`] = null;
+        updatedInventory[`custom_${type}${i}_desc`] = null;
         updatedInventory[`custom_${type}${i}_show`] = false;
         updatedInventory[`custom_${type}${i}_state`] = false;
       }
@@ -88,6 +90,7 @@ function FieldsTab({ inventory, setInventory }) {
       const type = f.type;
       const index = counters[type];
       updatedInventory[`custom_${type}${index}_name`] = f.title;
+      updatedInventory[`custom_${type}${index}_desc`] = f.desc;
       updatedInventory[`custom_${type}${index}_show`] = f.showInTable;
       updatedInventory[`custom_${type}${index}_state`] = true;
       counters[type]++;
@@ -144,17 +147,20 @@ function FieldsTab({ inventory, setInventory }) {
             padding: '8px'
           }}
         >
-          {fields.map((field, i) => (
-            <DraggableField
-              key={i}
-              field={field}
-              index={i}
-              moveField={moveField}
-              updateField={updateField}
-              removeField={removeField}
-              scrollContainerRef={scrollContainerRef}
-            />
-          ))}
+          {fields.map((field, i) => {
+            return (
+              <DraggableField
+                key={i}
+                field={field}
+                index={i}
+                moveField={moveField}
+                updateField={updateField}
+                removeField={removeField}
+                scrollContainerRef={scrollContainerRef}
+              />
+            );
+          })}
+
         </div>
 
         <h5 className="mt-4">Preview Form:</h5>

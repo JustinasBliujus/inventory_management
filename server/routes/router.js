@@ -3,7 +3,8 @@ import bcrypt from 'bcrypt';
 import { 
     getUsers, createUser, 
     createUserGoogle, getUserByEmail, updateLoginTime,
-    verifyUser, findUserByToken,  
+    verifyUser, findUserByToken, getUserInventories,
+    getEditableInventories, getUserByEmailPartial  
 } from '../databaseService/userService.js';
 import { getInventoryById } from '../databaseService/inventoryService.js';
 import { sendVerificationEmail } from './mailer.js';
@@ -11,7 +12,7 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { requireLogin, requireAdmin, requireUnblocked } from './middlewares.js';
 import adminRoutes from './adminRoutes.js';
-import {createInventory} from '../databaseService/inventoryService.js';
+import {createInventory,updateInventory, saveChat, deleteInventory,saveCustomID, addEditor, addItem, deleteItem} from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
 const SALT_ROUNDS = 10;
@@ -220,6 +221,152 @@ router.get("/getInventory/:id", requireLogin(), async (req, res) => {
   if (!result.success) return res.status(404).json(result);
 
   res.json(result.inventory.dataValues);
+});
+
+router.get("/getUsersInventories", requireLogin(), async (req, res) => {
+  const userId = req.session.user.id;
+
+  const result = await getUserInventories(userId);
+
+  if (!result.success) {
+    return res.status(404).json(result);
+  }
+
+  res.json({ success: true, inventories: result.inventories });
+});
+
+router.post("/saveInventory", requireLogin(), async (req, res) => {
+    const { inv_id, creator_id, ...fields } = req.body;
+    try {
+        const inv = await updateInventory(inv_id, creator_id, fields);
+        res.json({ success: true, inventory: inv });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+});
+
+router.post("/saveChat", requireLogin(), async (req, res) => {
+  const { inventory_id, message } = req.body;
+  const creator_email = req.session.user.email;
+
+  try {
+    const chat = await saveChat(inventory_id, creator_email, message);
+    res.json({ success: true, chat });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.get("/getEditableInventories", requireLogin(), async (req, res) => {
+  try {
+    const userId = req.session.user.id;
+    const result = await getEditableInventories(userId);
+
+    if (!result.success) {
+      return res.status(500).json(result);
+    }
+    res.json(result);
+  } catch (error) {
+    console.error("Route error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/deleteInventory', requireLogin(), async (req, res) => {
+  const { inventoryId } = req.body;
+  const userId = req.session.user.id;
+
+  if (!userId || !inventoryId) {
+    return res.status(400).json({ success: false, message: 'Missing userId or inventoryId' });
+  }
+
+  try {
+
+    const result = await deleteInventory(userId, inventoryId);
+
+    if (!result.success) {
+      return res.status(404).json({ success: false, message: result.message });
+    }
+
+    return res.json({ success: true, message: result.message });
+  } catch (error) {
+    console.error('Error deleting inventory:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post('/saveCustomID', requireLogin(), async (req, res) => {
+  const user_id = req.session.user.id;
+  const customID = req.body.customID;
+
+  if (!customID) {
+    return res.status(400).json({ success: false, message: "Missing customID data" });
+  }
+
+  const result = await saveCustomID(user_id, customID);
+  if (!result.success) {
+    return res.status(500).json(result);
+  }
+
+  res.json(result);
+});
+
+router.post("/search", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) return res.status(400).json({ success: false, message: "Email is required" });
+
+    const users = await getUserByEmailPartial(email);
+    return res.json({ success: true, users });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+router.post('/addEditor', requireLogin(), async (req, res) => {
+
+  const userId = req.session.user.id;
+  const inventoryId = BigInt(req.body.data);
+
+  try {
+    const result = await addEditor(inventoryId, userId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+router.post('/addItem', requireLogin(), async (req, res) => {
+  const { inventoryId, itemData } = req.body;
+  const creatorEmail = req.session.user.email;
+  try {
+    const result = await addItem(inventoryId, creatorEmail, itemData);
+    if (result.success) {
+      res.status(200).json(result.item);
+    } else {
+      res.status(400).json({ error: result.error });
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/deleteItem", async (req, res) => {
+  const { item_id, inv_id, creator_id } = req.body;
+  
+  if (!item_id || !inv_id || !creator_id) {
+    return res.status(400).json({ success: false, message: "Missing required fields" });
+  }
+
+  const result = await deleteItem(item_id, inv_id, creator_id);
+
+  if (result.success) {
+    return res.json(result);
+  } else {
+    return res.status(404).json(result);
+  }
 });
 
 export default router;

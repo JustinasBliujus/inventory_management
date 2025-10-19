@@ -1,64 +1,131 @@
 import React, { useState, useEffect } from 'react';
-import DataTable from '../../components/dataTable';
 import { useNavigate } from 'react-router-dom';
-import { FaTrash, FaPlus } from 'react-icons/fa';
-import Button from 'react-bootstrap/Button';
+import { Container, Button, Form, Alert } from 'react-bootstrap';
+import DataTable from '../../components/dataTable';
+import { userService } from '../../../api/userService';
 
-function ItemsTab({ inventory, setInventory }) {
+function InventoryItems({ inventory }) {
   const navigate = useNavigate();
-  const [columns, setColumns] = useState([]);
+
+  const [items, setItems] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-
-    const baseColumns = [
-      {
-        key: 'checkbox',
-        label: '',
-        render: () => <input type="checkbox" />,
-      },
-    ];
-
-    const customColumns = [];
-
-    if (inventory) {
-      const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
-
-      for (let type of customTypes) {
-        for (let i = 1; i <= 3; i++) {
-          const showKey = `custom_${type}${i}_show`;
-          const nameKey = `custom_${type}${i}_name`;
-
-          if (inventory[showKey]) {
-            customColumns.push({
-              key: `${type}${i}`,
-              label: inventory[nameKey] || `Custom ${type} ${i}`,
-              render: (value, row) => row[`${type}${i}`] ?? '',
-            });
-          }
-        }
-      }
+    if (inventory?.items) {
+      const mappedItems = inventory.items.map(item => ({
+        ...item,
+        selected: false
+      }));
+      setItems(mappedItems);
+      setSelectAll(false);
     }
-
-    setColumns([...baseColumns, ...customColumns]);
   }, [inventory]);
 
-  const itemsData = inventory?.items || [];
+  const handleSelectAll = () => {
+    const newSelectAll = !selectAll;
+    setSelectAll(newSelectAll);
+    setItems(items.map(item => ({ ...item, selected: newSelectAll })));
+  };
+
+  const handleSelectRow = (id) => {
+    const updatedItems = items.map(item =>
+      item.id === id ? { ...item, selected: !item.selected } : item
+    );
+    setItems(updatedItems);
+    setSelectAll(updatedItems.every(item => item.selected));
+  };
+
+  const handleDeleteItems = async () => {
+    const selectedItems = items.filter(item => item.selected);
+    if (selectedItems.length === 0) {
+      setError("Please select at least one item to delete.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      await Promise.all(
+        selectedItems.map(item =>
+          userService.deleteitem(item.id, item.inventory_id, inventory.user_id)
+        )
+      );
+
+      setSuccess(`${selectedItems.length} item(s) deleted successfully`);
+      setItems(items.filter(item => !item.selected));
+      setSelectAll(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete items.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dynamically create columns based on inventory's *_show flags
+  const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
+  const customColumns = [];
+
+  customTypes.forEach(type => {
+    for (let i = 1; i <= 3; i++) {
+      const showKey = `custom_${type}${i}_show`;
+      const nameKey = `custom_${type}${i}_name`;
+      const descKey = `custom_${type}${i}_desc`;
+      const stateKey = `custom_${type}${i}_state`;
+
+      if (inventory[showKey] && inventory[stateKey]) {
+        customColumns.push({
+          key: `${type}${i}`,
+          label: inventory[nameKey] || `${type} ${i}`,
+          render: (value) => {
+            if (type === 'bool') return value ? 'Yes' : 'No';
+            return value || '-';
+          },
+          sortable: true
+        });
+      }
+    }
+  });
+
+  const columns = [
+    {
+      key: 'select',
+      label: <Form.Check type="checkbox" checked={selectAll} onChange={handleSelectAll} />,
+      render: (_, row) => <Form.Check type="checkbox" checked={row.selected} onChange={() => handleSelectRow(row.id)} />
+    },
+    { key: 'creator_email', label: 'Creator Email', sortable: true },
+    ...customColumns,
+    { key: 'createdAt', label: 'Created At', sortable: true, render: (value) => new Date(value).toLocaleString() },
+    { key: 'updatedAt', label: 'Updated At', sortable: true, render: (value) => new Date(value).toLocaleString() },
+  ];
 
   return (
     <div>
-      <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-        <Button variant="danger" onClick={() => alert("Delete user")} title="Delete">
-          <FaTrash color='white' />
+      {error && <Alert variant="danger">{error}</Alert>}
+      {success && <Alert variant="success">{success}</Alert>}
+
+      <div className="d-flex justify-content-start gap-2 mb-3">
+        <Button
+          variant="danger"
+          onClick={handleDeleteItems}
+          disabled={loading}
+        >
+          {loading ? 'Deleting...' : 'Delete Selected Items'}
         </Button>
-        <Button variant="success" onClick={() => navigate('/items')} title="Create New Item">
-          <FaPlus color='white' />
+        <Button
+          variant="success"
+          onClick={() => navigate('/addItem', { state: { inventory } })}
+        >
+          Add New Item
         </Button>
       </div>
 
-      <h4>Items</h4>
-      <DataTable data={itemsData} columns={columns} />
+      <DataTable data={items} columns={columns} itemsPerPage={5} />
     </div>
   );
 }
 
-export default ItemsTab;
+export default InventoryItems;
