@@ -12,7 +12,12 @@ import crypto from 'crypto';
 import dotenv from 'dotenv';
 import { requireLogin, requireAdmin, requireUnblocked } from './middlewares.js';
 import adminRoutes from './adminRoutes.js';
-import {createInventory,updateInventory, saveChat, deleteInventory,saveCustomID, addEditor, addItem, deleteItem} from '../databaseService/inventoryService.js';
+import {createInventory, updateInventory, saveChat,
+   deleteInventory, saveCustomID, addEditor,
+    addItem, deleteItem, saveInventoryTags,
+     getLastInventories, getMostPopularInventories,
+     getRandomTags
+    } from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
 const SALT_ROUNDS = 10;
@@ -32,7 +37,7 @@ router.post('/loginGoogle', async (req, res) => {
         });
     }
     try {
-        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin };
+        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin, name: user.name };
 
         await updateLoginTime(user.email);
 
@@ -70,7 +75,7 @@ router.post('/login', async (req, res) => {
             });
         }
 
-        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin };
+        req.session.user = { id: user.id, email: user.email, status: user.status, is_admin: user.is_admin, name: user.name  };
 
         await updateLoginTime(user.email);
 
@@ -85,6 +90,13 @@ router.post('/login', async (req, res) => {
                 message: "Internal server error, please try again later"
         });
     }
+});
+router.get("/session-user", (req, res) => {
+  if (req.session.user) {
+    res.json({ success: true, user: req.session.user });
+  } else {
+    res.json({ success: false, user: null });
+  }
 });
 
 router.get('/isLoggedIn', requireLogin(), requireUnblocked(), (req, res) => {
@@ -369,4 +381,31 @@ router.post("/deleteItem", async (req, res) => {
   }
 });
 
+router.post("/saveTags", requireLogin(), async (req, res) => {
+  const { tags, inventoryId } = req.body;
+  console.log(tags+" "+inventoryId)
+  try {
+    const savedTags = await saveInventoryTags(req.session.user.id, inventoryId, tags);
+    res.json({ success: true, tags: savedTags });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/inventories/last', async (req, res) => {
+  const result = await getLastInventories(10);
+  res.json(result);
+});
+
+router.get('/inventories/popular', async (req, res) => {
+  const result = await getMostPopularInventories(10);
+  res.json(result);
+});
 export default router;
+
+router.get('/random', async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const result = await getRandomTags(limit);
+  res.json(result);
+});

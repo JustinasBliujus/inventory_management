@@ -8,9 +8,11 @@ import DataTable from '../components/dataTable';
 import { Container, Spinner, Alert, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { userService } from '../../api/userService';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../../appContext';
 
 function AdminPage() {
   const navigate = useNavigate();
+  const { darkMode } = useAppContext();
 
   const [users, setUsers] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -138,8 +140,9 @@ function AdminPage() {
   }
 
   return (
-    <Container className="mt-5 p-5">
+    <div>
       <SharedNavbar />
+    <Container className="mt-5 p-5">
 
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
@@ -170,8 +173,9 @@ function AdminPage() {
         </OverlayTrigger>
       </div>
 
-      <DataTable data={users} columns={columns} itemsPerPage={10} />
+      <DataTable data={users} columns={columns} itemsPerPage={10} darkMode={darkMode}/>
     </Container>
+    </div>
   );
 }
 

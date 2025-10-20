@@ -2,6 +2,7 @@ import { useDrag, useDrop } from 'react-dnd';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
+import '../../../../components/darkMode.css'
 
 function DraggableElement({
   element,
@@ -10,6 +11,7 @@ function DraggableElement({
   updateElement,
   removeElement,
   scrollContainerRef,
+  darkMode
 }) {
   const [, dropRef] = useDrop({
     accept: 'element',
@@ -66,11 +68,13 @@ function DraggableElement({
   };
 
   return (
-    <Card ref={ref} className="p-2 my-2 d-flex flex-column">
+    <Card ref={ref} className={`p-2 my-2 d-flex flex-column ${
+        darkMode ? 'textarea-dark border-light' : ''
+      }`}>
       <div className="d-flex justify-content-between align-items-center">
         <strong>{element.type}</strong>
         <Button
-          variant="outline-danger"
+          variant={darkMode ? 'outline-light' : 'outline-danger'}
           size="sm"
           onClick={() => removeElement(index)}
         >
@@ -84,13 +88,12 @@ function DraggableElement({
           placeholder="Enter fixed text"
           value={element.value || ''}
           onChange={(e) => handleChange('value', e.target.value)}
+          
         />
       )}
 
       {['20-bit random number', '32-bit random number'].includes(element.type) && (
-        <Form.Group className="mt-2">
-          <Form.Label>Value</Form.Label>
-        </Form.Group>
+        <Form.Group className="mt-2"></Form.Group>
       )}
 
       {['20-bit random number', '32-bit random number'].includes(element.type) && (
@@ -99,6 +102,7 @@ function DraggableElement({
           <Form.Select
             value={element.format}
             onChange={(e) => handleChange('format', e.target.value)}
+            className={darkMode ? 'bg-dark text-white border-secondary' : ''}
           >
             <option value="decimal">Decimal</option>
             <option value="hex">Hexadecimal</option>
@@ -112,6 +116,7 @@ function DraggableElement({
           <Form.Select
             value={element.format}
             onChange={(e) => handleChange('format', e.target.value)}
+            className={darkMode ? 'bg-dark text-white border-secondary' : ''}
           >
             <option value="YYYY">Year only</option>
             <option value="MM">Month only</option>

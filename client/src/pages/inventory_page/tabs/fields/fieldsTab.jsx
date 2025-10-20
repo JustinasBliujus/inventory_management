@@ -10,10 +10,15 @@ import { defaultNewField } from './components/fieldUtils';
 import DraggableField from './components/draggableField';
 import { renderFieldInput } from './components/fieldInputRenderer';
 import Form from 'react-bootstrap/Form';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../../../appContext';
 
 function FieldsTab({ inventory, setInventory }) {
   const [fields, setFields] = useState([]);
   const scrollContainerRef = useRef(null);
+  const { t } = useTranslation();
+  const { darkMode } = useAppContext();
+
 
   useEffect(() => {
     if (!inventory) return;
@@ -73,7 +78,6 @@ function FieldsTab({ inventory, setInventory }) {
     }));
 
     const updatedInventory = { ...inventory };
-
     const fieldTypes = ["line", "multiline", "number", "url", "bool"];
     fieldTypes.forEach(type => {
       for (let i = 1; i <= 3; i++) {
@@ -85,7 +89,6 @@ function FieldsTab({ inventory, setInventory }) {
     });
 
     const counters = { line: 1, multiline: 1, number: 1, url: 1, bool: 1 };
-
     payload.forEach(f => {
       const type = f.type;
       const index = counters[type];
@@ -103,9 +106,9 @@ function FieldsTab({ inventory, setInventory }) {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className='p-2'>
-        <h4>Configure custom fields</h4>
-        <p>
-          You can choose up to {MAX_FIELDS} fields of each type.<br/>Drag to reorder, click × or drag out to remove.
+        <h4 className={darkMode ? 'text-light' : ''}>{t('fieldsHeader')}</h4>
+        <p className={darkMode ? 'text-light' : ''}>
+          {t('fieldsExplanation', {count: MAX_FIELDS})}
         </p>
 
         <div className="d-flex flex-wrap gap-2 mb-3">
@@ -116,15 +119,14 @@ function FieldsTab({ inventory, setInventory }) {
               overlay={
                 <Tooltip id={`tooltip${type}`}>
                   {checkLength(type) >= MAX_FIELDS
-                    ? 'Maximum elements reached'
+                    ? t('maxElements')
                     : FIELD_TOOLTIPS[type]}
                 </Tooltip>
               }
             >
               <Button
-                key={type}
                 disabled={checkLength(type) >= MAX_FIELDS}
-                variant="outline-primary"
+                variant={darkMode ? 'outline-light' : 'outline-primary'}
                 size="sm"
                 onClick={() => addField(type)}
                 style={{ pointerEvents: 'auto' }}
@@ -135,53 +137,58 @@ function FieldsTab({ inventory, setInventory }) {
           ))}
         </div>
 
-        {fields.length === 0 && <p className="text-muted">No Fields added yet.</p>}
+        {fields.length === 0 && (
+          <p className={darkMode ? 'text-light' : 'text-muted'}>{t('noElements')}</p>
+        )}
 
         <div
           ref={scrollContainerRef}
           style={{
             maxHeight: '400px',
             overflowY: 'auto',
-            border: '1px solid #ddd',
+            border: darkMode ? '1px solid #555' : '1px solid #ddd',
             borderRadius: '8px',
-            padding: '8px'
+            padding: '8px',
+            backgroundColor: darkMode ? '#2a2a2a' : '#fff'
           }}
         >
-          {fields.map((field, i) => {
-            return (
-              <DraggableField
-                key={i}
-                field={field}
-                index={i}
-                moveField={moveField}
-                updateField={updateField}
-                removeField={removeField}
-                scrollContainerRef={scrollContainerRef}
-              />
-            );
-          })}
-
+          {fields.map((field, i) => (
+            <DraggableField
+              key={i}
+              field={field}
+              index={i}
+              moveField={moveField}
+              updateField={updateField}
+              removeField={removeField}
+              scrollContainerRef={scrollContainerRef}
+              darkMode={darkMode}
+            />
+          ))}
         </div>
 
-        <h5 className="mt-4">Preview Form:</h5>
-        <Card className="p-3">
+        <h5 className={`mt-4 ${darkMode ? 'text-light' : ''}`}>{t('previewFields')}</h5>
+        <Card
+          className={`p-3 ${darkMode ? 'textarea-dark text-white border-light' : ''}`}
+        >
           {fields.length > 0 ? (
             fields.map((field, i) => (
               <Form.Group key={i} className="mb-3">
-                <Form.Label className="fw-bold">
+                <Form.Label className={darkMode ? 'text-light fw-bold' : 'fw-bold'}>
                   {field.title || '[No title]'}
                 </Form.Label>
-                {renderFieldInput(field, i, fields, setFields)}
+                {renderFieldInput(field, i, fields, setFields, darkMode)}
               </Form.Group>
             ))
           ) : (
-            <span className="text-muted">No Fields defined</span>
+            <span className={darkMode ? 'text-light' : 'text-muted'}>
+              {t('noElements')}
+            </span>
           )}
         </Card>
 
         <div className="mt-3 text-end">
-          <Button variant="success" onClick={handleSave}>
-            Save Fields
+          <Button variant={darkMode ? 'outline-light' : 'success'} onClick={handleSave}>
+            {t('saveFields')}
           </Button>
         </div>
       </div>

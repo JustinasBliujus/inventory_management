@@ -4,10 +4,17 @@ import Form from 'react-bootstrap/Form';
 import { userService } from '../../api/userService';
 import { useState } from 'react';
 import { useNavigate, useLocation } from "react-router";
-import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode'
+import { useTranslation } from 'react-i18next';
+import '../components/darkMode.css'
+import { useAppContext } from '../../appContext';
+import GoogleButton from "../components/googleButton";
+import AuthNavbar from '../components/authNavBar';
 
 function LoginPage() {
+  const { darkMode } = useAppContext();
+
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -69,33 +76,37 @@ function LoginPage() {
   };
 
   return (
+   <div>
+     <AuthNavbar></AuthNavbar>
     <div className="container d-flex justify-content-center align-items-center vh-100">
       <div className="col-12 col-lg-4">
         <Form className="p-4 border rounded shadow" onSubmit={handleLogin}>
-          <h2 className="mb-4 text-center">Login</h2>
+          <h2 className="mb-4 text-center">{t('login')}</h2>
 
           <Form.Group className="mb-4" controlId="email">
             <Form.Control
               type="email"
-              placeholder="Enter email"
+              placeholder={t('enterEmail')}
               size="lg"
               required
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="password">
             <Form.Control
               type="password"
-              placeholder="Password"
+              placeholder={t('password')}
               size="lg"
               required
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
           <Button variant="primary" type="submit" className="w-100 mb-4" size="lg">
-            Login
+            {t('login')}
           </Button>
 
           {success && (
@@ -110,32 +121,35 @@ function LoginPage() {
             </div>
           )}
 
-          <p className="text-center text-muted mb-3">or login with other accounts</p>
+          <p className="text-center mb-3">{t('loginOther')}</p>
 
-          {/* Social login buttons */}
           <div className="d-flex flex-column gap-2 align-items-center mb-3">
-            
-            <GoogleLogin 
-            onSuccess={(credentials) => {
-              const credential = jwtDecode(credentials.credential);
-              handleLoginGoogle(credential.email);
-            }}
-            onError={() => console.log("Login Failed")}
+            <GoogleButton
+              text="signin_with"
+              type="standard"
+              size="large"
+              theme={darkMode ? "filled_black" : "outline"} 
+              width="250"
+              onSuccess={(credentials) => {
+                const credential = jwtDecode(credentials.credential);
+                handleLoginGoogle(credential.email);
+              }}
+              onError={() => console.log("Login Failed")}
             />
-
           </div>
 
-          <Form.Text className="d-block text-center">
+          <Form.Text className="d-block text-center" style={{ color: darkMode ? '#ccc' : undefined }}>
             <a
               style={{ cursor: "pointer" }}
               onClick={() => navigate('/register')}
             >
-              Don't have an account yet?
+              {t('noAccountYet')}
             </a>
           </Form.Text>
         </Form>
       </div>
     </div>
+   </div>
   );
 }
 

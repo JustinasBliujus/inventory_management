@@ -4,12 +4,16 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { userService } from '../../api/userService';
 import { useNavigate } from "react-router";
-import { GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode'
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../appContext';
+import GoogleButton from "../components/googleButton";
+import AuthNavbar from '../components/authNavBar';
 
 function RegisterPage() {
+  const { darkMode } = useAppContext();
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
   const [error, setError] = useState("");
 
   const clearError = () => {
@@ -68,66 +72,73 @@ function RegisterPage() {
   };
 
   return (
-    <div className="container d-flex justify-content-center align-items-center vh-100">
+    <div>
+    <AuthNavbar></AuthNavbar>
+    <div className="container d-flex justify-content-center align-items-center vh-90">
       <div className="col-12 col-lg-4">
         <Form className="p-5 border rounded shadow" onSubmit={handleRegister}>
-          <h2 className="mb-4 text-center">Register</h2>
+          <h2 className="mb-4 text-center">{t('register')}</h2>
 
           <Form.Group className="mb-4" controlId="name">
             <Form.Control
               type="text"
-              placeholder="First Name"
+              placeholder={t('firstName')}
               size="lg"
               required
               value={formData.name}
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="surname">
             <Form.Control
               type="text"
-              placeholder="Last Name"
+              placeholder={t('lastName')}
               size="lg"
               required
               value={formData.surname}
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="email">
             <Form.Control
               type="email"
-              placeholder="Enter email"
+              placeholder={t('enterEmail')}
               size="lg"
               required
               value={formData.email}
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
-            <Form.Text className="text-muted">
-              We will send you a verification message
+            <Form.Text style={{ color: darkMode ? '#ccc' : undefined }} >
+              {t('sendMessage')}
             </Form.Text>
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="password">
             <Form.Control
               type="password"
-              placeholder="Password"
+              placeholder={t('password')}
               size="lg"
               required
               value={formData.password}
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
           <Form.Group className="mb-4" controlId="repeatPassword">
             <Form.Control
               type="password"
-              placeholder="Repeat password"
+              placeholder={t('repeatPassword')}
               size="lg"
               required
               value={formData.repeatPassword}
               onChange={handleChange}
+              className={darkMode ? 'textarea-dark' : ''}
             />
           </Form.Group>
 
@@ -139,23 +150,29 @@ function RegisterPage() {
             {error}
           </div>)}
 
-          <p className="text-center text-muted mb-3">or register with other accounts</p>
+          <p className="text-center mb-3">{t('registerOther')} </p>
 
           <div className="d-flex flex-column gap-2 align-items-center mb-3">
-            <GoogleLogin 
+            <GoogleButton
+              text="signup_with"
+              type="standard"
+              size="large"
+              theme={darkMode ? "filled_black" : "outline"} 
+              width="250"
               onSuccess={(credentials) => {
                 const credential = jwtDecode(credentials.credential);
                 handleRegisterGoogle(credential);
               }}
               onError={() => console.log("Register Failed")}
-              />
+            />
           </div>
 
-          <Form.Text className="d-block text-center">
-            <a style={{ cursor: "pointer" }} onClick={() => navigate("/login")}>Already Have an account?</a>
+          <Form.Text className="d-block text-center" style={{ color: darkMode ? '#ccc' : undefined }}>
+            <a style={{ cursor: "pointer" }} onClick={() => navigate("/login")}>{t('alreadyHaveAccount')}</a>
           </Form.Text>
         </Form>
       </div>
+    </div>
     </div>
   );
 }

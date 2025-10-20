@@ -1,12 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Button, Form, Alert } from 'react-bootstrap';
+import { Button, Form, Alert } from 'react-bootstrap';
 import DataTable from '../../components/dataTable';
 import { userService } from '../../../api/userService';
+import { FaTrash, FaPlus } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../../appContext';
 
 function InventoryItems({ inventory }) {
-  const navigate = useNavigate();
+  const { darkMode } = useAppContext();
 
+  const navigate = useNavigate();
+  const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState(null);
@@ -65,7 +70,6 @@ function InventoryItems({ inventory }) {
     }
   };
 
-  // Dynamically create columns based on inventory's *_show flags
   const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
   const customColumns = [];
 
@@ -73,7 +77,7 @@ function InventoryItems({ inventory }) {
     for (let i = 1; i <= 3; i++) {
       const showKey = `custom_${type}${i}_show`;
       const nameKey = `custom_${type}${i}_name`;
-      const descKey = `custom_${type}${i}_desc`;
+      //const descKey = `custom_${type}${i}_desc`;
       const stateKey = `custom_${type}${i}_state`;
 
       if (inventory[showKey] && inventory[stateKey]) {
@@ -107,23 +111,27 @@ function InventoryItems({ inventory }) {
       {error && <Alert variant="danger">{error}</Alert>}
       {success && <Alert variant="success">{success}</Alert>}
 
+      <h4>{t('items')}</h4>
+
       <div className="d-flex justify-content-start gap-2 mb-3">
         <Button
           variant="danger"
           onClick={handleDeleteItems}
           disabled={loading}
+          title={t('deleteSelected')}
         >
-          {loading ? 'Deleting...' : 'Delete Selected Items'}
+          <FaTrash color='white' />
         </Button>
         <Button
+          title={t('addNewItem')}
           variant="success"
           onClick={() => navigate('/addItem', { state: { inventory } })}
         >
-          Add New Item
+          <FaPlus color='white' />
         </Button>
       </div>
 
-      <DataTable data={items} columns={columns} itemsPerPage={5} />
+      <DataTable data={items} columns={columns} itemsPerPage={5} darkMode={darkMode} />
     </div>
   );
 }

@@ -1,9 +1,14 @@
-import React from 'react';
 import Table from 'react-bootstrap/Table';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../../appContext';
 
 function StatsTab({ inventory }) {
+    const { t } = useTranslation();
+    const { darkMode } = useAppContext();
+
+
     if (!inventory) {
-        return <p>No items available for statistics.</p>;
+        return <p>{t('noStats')}</p>;
     }
 
     const totalItems = inventory.items?.length ?? null;
@@ -35,24 +40,24 @@ function StatsTab({ inventory }) {
 
     return (
         <div>
-            <h4>Inventory Statistics</h4>
-            <Table striped bordered hover responsive>
+            <h4>{t('invStats')}</h4>
+            <Table striped bordered hover responsive className={darkMode ? 'table-dark' : 'table-light'}>
                 <tbody>
                     {totalItems !== null && (
                         <tr>
-                            <td>Total Items</td>
+                            <td>{t('totalItems')}</td>
                             <td>{totalItems}</td>
                         </tr>
                     )}
                     {uniqueContributorsCount !== null && (
                         <tr>
-                            <td>Total Contributors</td>
+                            <td>{t('totalContributors')}</td>
                             <td>{uniqueContributorsCount}</td>
                         </tr>
                     )}
                     {biggestContributor !== null && (
                         <tr>
-                            <td>Biggest Contributor</td>
+                            <td>{t('biggestContributor')}</td>
                             <td>
                                 <a href='personal' style={{ textDecoration: "none" }}>
                                     {biggestContributor}
@@ -62,7 +67,7 @@ function StatsTab({ inventory }) {
                     )}
                     {totalItems === null && uniqueContributorsCount === null && biggestContributor === null && (
                         <tr>
-                            <td colSpan="2">No statistics available.</td>
+                            <td colSpan="2">{t('noStats')}</td>
                         </tr>
                     )}
                 </tbody>

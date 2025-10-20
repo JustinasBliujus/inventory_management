@@ -12,8 +12,14 @@ import FieldsTab from './tabs/fields/fieldsTab';
 import CustomIdTab from './tabs/customId/customIdTab';
 import { useLocation } from 'react-router-dom';
 import { userService } from '../../api/userService';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../appContext';
+import { Container } from 'react-bootstrap';
 
 function InventoryPage() {
+    const { darkMode } = useAppContext();
+
+    const { t } = useTranslation();
     const [isMobile, setIsMobile] = useState(false);
     const [activeTab, setActiveTab] = useState("items");
     const location = useLocation();
@@ -49,6 +55,7 @@ function InventoryPage() {
             try {
                 const res = await userService.getInventory(inventoryId);
                 setInventory(res.data); 
+                console.log(res.data)
             } catch (err) {
                 console.error(err);
             }
@@ -68,13 +75,13 @@ function InventoryPage() {
     }, []);
 
     return (
-        <div className='vh-100 d-flex flex-column align-items-center'>
-            <SharedNavbar />
-            <div className='mt-5 h-100 w-75 pt-3'>
-                {/* Mobile nav */}
+        <div>
+        <SharedNavbar />
+        <div className='position-relative top-0 start-0'>
+            {/* Mobile nav */}
                 {isMobile && (
-                    <div style={{ position: 'fixed', top: 60, left: 0, width: '100%', zIndex: 1000 }}>
-                        <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect} className="justify-content-around mb-3">
+                    <div className='position-relative top-0 start-0'>
+                        <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect} className={`justify-content-around mb-3 ${darkMode ? 'nav-tabs-dark' : ''}`}>
                             <Nav.Item><Nav.Link eventKey="items"><FaBox size={15} /></Nav.Link></Nav.Item>
                             <Nav.Item><Nav.Link eventKey="chat"><FaComments size={15} /></Nav.Link></Nav.Item>
                             <Nav.Item><Nav.Link eventKey="settings"><FaCog size={15} /></Nav.Link></Nav.Item>
@@ -88,27 +95,28 @@ function InventoryPage() {
 
                 {/* Desktop nav */}
                 {!isMobile && (
-                    <div className="d-flex justify-content-center">
-                        <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect}>
-                            <Nav.Item><Nav.Link eventKey="items">Items</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="chat">Chat</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="settings">Settings</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="customId">Custom ID</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="fields">Fields</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="access">Access</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="stats">Stats</Nav.Link></Nav.Item>
+                    <div className='position-relative top-0 start-0'>
+                        <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect} className={`justify-content-around mb-3 ${darkMode ? 'nav-tabs-dark' : ''}`}>
+                            <Nav.Item><Nav.Link eventKey="items">{t('items')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="chat">{t('chat')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="settings">{t('settings')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="customId">{t('customId')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="fields">{t('fields')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="access">{t('access')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="stats">{t('stats')}</Nav.Link></Nav.Item>
                         </Nav>
                     </div>
                 )}
-
+        </div>
+        <Container className='vh-100 d-flex flex-column align-items-start'>
                 {inventory && (
                     <>
                         <p className="fs-1 mt-5">{inventory.name}</p>
                         <p className="mt-1">{inventory.description}</p>
                         <Button variant="success" onClick={handleSave}>
-                            Save Inventory
+                            {t('saveInventory')}
                         </Button>
-                <div className="mt-4">
+                <div className="mt-4 container-fluid">
                     {activeTab === "items" && <ItemsTab inventory={inventory} setInventory={setInventory} />}
                     {activeTab === "chat" && <ChatTab inventory={inventory} setInventory={setInventory} />}
                     {activeTab === "access" && <AccessTab inventory={inventory} setInventory={setInventory} />}
@@ -119,7 +127,7 @@ function InventoryPage() {
                 </div>
                 </>
                 )}
-            </div>
+        </Container>
         </div>
     );
 }

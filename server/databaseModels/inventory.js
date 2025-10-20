@@ -22,7 +22,23 @@ const Inventory = db.define("inventory", {
     type: DataTypes.STRING(255),
     allowNull: true,
   },
-  
+
+  category: {
+    type: DataTypes.ENUM(
+      "Electronics",
+       "Office",
+        "Tools",
+        "Clothing",
+        "Home",
+        "Food",
+        "Health",
+        "Sports",
+        "Miscellaneous"
+      ),
+    allowNull: true,
+    defaultValue: null,
+  },
+
   is_public: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

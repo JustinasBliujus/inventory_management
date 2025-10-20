@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import Table from 'react-bootstrap/Table';
 import Pagination from 'react-bootstrap/Pagination';
+import './darkMode.css';
 
-function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
+function DataTable({ data, columns, onRowClick, itemsPerPage = 10, darkMode }) {
+
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
+
   const handleSort = (key) => {
     setSortConfig(prev => ({
       key,
@@ -30,7 +33,7 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10 }) {
 
   return (
     <div>
-      <Table striped bordered hover responsive>
+      <Table striped bordered hover responsive className={darkMode ? 'table-dark' : 'table-light'}>
         <thead>
           <tr>
             {columns.map(col => (

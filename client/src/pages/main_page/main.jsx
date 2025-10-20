@@ -1,60 +1,24 @@
 import SharedNavbar from '../components/navbar';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container } from 'react-bootstrap';
-import './main.css';
 import { TagCloud } from 'react-tagcloud'
 import DataTable from '../components/dataTable';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../appContext';
+import { useEffect, useState } from 'react';
+import { userService } from '../../api/userService';
+import { useNavigate } from 'react-router-dom';
 
-const latestInventories = [
-  { name: 'Inventory A', description: 'Electronics and gadgets', creator: 'Alice', image: null },
-  { name: 'Inventory B', description: 'Books and novels', creator: 'Bob', image: null },
-  { name: 'Inventory C', description: null, creator: 'Charlie', image: 'https://via.placeholder.com/50' },
-  { name: 'Inventory D', description: 'Sports items', creator: 'David', image: null },
-  { name: 'Inventory E', description: null, creator: 'Eve', image: 'https://via.placeholder.com/50' },
-];
+function MainPage() {
+  const { darkMode } = useAppContext();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  
+  const [latestInventories, setLatestInventories] = useState([]);
+  const [popularInventories, setPopularInventories] = useState([]);
+  const [tags, setTags] = useState([]);
 
-const popularInventories = [
-  { name: 'Inventory X', items: 120, creator: 'Alice' },
-  { name: 'Inventory Y', items: 98, creator: 'Bob' },
-  { name: 'Inventory Z', items: 85, creator: 'Charlie' },
-  { name: 'Inventory W', items: 70, creator: 'David' },
-  { name: 'Inventory V', items: 50, creator: 'Eve' },
-];
-
-const tags = [
-  { value: 'HTML', count: 28 },
-  { value: 'Amazon Pay', count: 18 },
-  { value: 'Code', count: 15 },
-  { value: 'Cars', count: 3 },
-  { value: 'Windows', count: 8 },
-  { value: 'Apple', count: 10 },
-  { value: 'Images', count: 20 },
-  { value: 'JavaScript', count: 25 },
-  { value: 'React', count: 30 },
-  { value: 'Node.js', count: 22 },
-  { value: 'CSS', count: 18 },
-  { value: 'Python', count: 27 },
-  { value: 'Machine Learning', count: 15 },
-  { value: 'AI', count: 12 },
-  { value: 'Data Science', count: 14 },
-  { value: 'E-commerce', count: 10 },
-  { value: 'Gaming', count: 8 },
-  { value: 'Mobile Apps', count: 11 },
-  { value: 'Cloud', count: 9 },
-  { value: 'Databases', count: 13 },
-  { value: 'Security', count: 7 },
-  { value: 'Blockchain', count: 6 },
-  { value: 'Travel', count: 5 },
-  { value: 'Food', count: 4 },
-  { value: 'Music', count: 12 },
-  { value: 'Photography', count: 10 },
-  { value: 'Startup', count: 8 },
-  { value: 'Education', count: 9 },
-  { value: 'Health', count: 6 },
-  { value: 'Fitness', count: 5 }
-];
-
-const SimpleCloud = () => (
+  const SimpleCloud = () => (
   <div className='d-flex justify-content-center text-center'>
     <TagCloud
       minSize={12}
@@ -67,30 +31,101 @@ const SimpleCloud = () => (
   </div>
 )
 
-function MainPage() {
+  useEffect(() => {
+          const fetchData = async () => {
+              try {
+                  const result = await userService.getLastInventories();
+                  const latest = result.data.inventories.map(inv => ({
+                      ...inv,
+                      id: inv.id,
+                      name: inv.name,
+                      category: inv.category,
+                      description: inv.description,
+                      creator: inv.user.email,
+                      created: inv.createdAt             
+                  }));
+                  setLatestInventories(latest);
+  
+              } catch (err) {
+                  console.error("Error fetching latest inventories:", err);
+              }
+
+              try {
+                  const result = await userService.getPopularInventories();
+                  const popular = result.data.inventories.map(inv => ({
+                      ...inv,
+                      id_pop: inv.id,
+                      name_pop: inv.name,
+                      category_pop: inv.category,
+                      description_pop: inv.description,
+                      creator_pop: inv.user.email,
+                      itemCount_pop: inv.itemCount         
+                  }));
+                  setPopularInventories(popular);
+  
+              } catch (err) {
+                  console.error("Error fetching popular inventories:", err);
+              }
+
+              try {
+                  const result = await userService.getRandomTags();
+                  
+                  const tagNames = result.data.tags.map(tag => ({
+                      value: tag.name,
+                      count: Math.floor(Math.random() * 30) + 1
+                  }));
+                  setTags(tagNames);
+              } catch (err) {
+                  console.error("Error fetching popular inventories:", err);
+              }
+          };
+          fetchData();
+      }, []);
 
   const latestColumns = [
-    { key: 'name', label: 'Name', sortable: true, render: (value) => <a href="/" className="text-decoration-none">{value}</a> },
+    { 
+      key: 'name', label: 'Name', sortable: true, render: (value, row) => (
+            <span
+                style={{ cursor: 'pointer', color: '#0d6efd', }}
+                onClick={() => navigate('/inventory', { state: row.id })}
+            >
+                {value}
+            </span>
+        )
+    },
+    { key: 'category', label: 'Category', sortable: true, render: (value) => value || '-' },
     { key: 'description', label: 'Description', sortable: true, render: (value) => value || '-' },
-    { key: 'creator', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> }
+    { key: 'creator', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> },
+    { key: 'created', label: 'Created At', sortable: true, render: (value) => value || '-' },
   ];
 
   const popularColumns = [
-    { key: 'name', label: 'Name', sortable: true, render: (value) => <a href="/" className="text-decoration-none">{value}</a> },
-    { key: 'items', label: 'Items', sortable: true },
-    { key: 'creator', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> }
+    { 
+      key: 'name_pop', label: 'Name', sortable: true, render: (value, row) => (
+            <span
+                style={{ cursor: 'pointer', color: '#0d6efd', }}
+                onClick={() => navigate('/inventory', { state: row.id })}
+            >
+                {value}
+            </span>
+        )
+    },
+    { key: 'category_pop', label: 'Category', sortable: true, render: (value) => value || '-' },
+    { key: 'description_pop', label: 'Description', sortable: true, render: (value) => value || '-' },
+    { key: 'itemCount_pop', label: 'Item count', sortable: true },
+    { key: 'creator_pop', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> },
   ];
 
   return (
     <div className="vh-100">
       <SharedNavbar />
       <Container className="mt-5 p-5">
-        <p className="fs-1 d-none d-md-block">Choose From Categories</p>
+        <p className="fs-1 d-none d-md-block">{t('chooseTopic')}</p>
         <SimpleCloud></SimpleCloud>
-        <p className="fs-1 d-none d-md-block">Latest Inventories</p>
-        <DataTable data={latestInventories} columns={latestColumns} itemsPerPage={5} />
-        <p className="fs-1 d-none d-md-block">Most Popular Inventories</p>
-        <DataTable data={popularInventories} columns={popularColumns} itemsPerPage={5} />
+        <p className="fs-1 d-none d-md-block">{t('latestInventories')}</p>
+        <DataTable data={latestInventories} columns={latestColumns} itemsPerPage={5} darkMode={darkMode}/>
+        <p className="fs-1 d-none d-md-block">{t('mostPopularInventories')}</p>
+        <DataTable data={popularInventories} columns={popularColumns} itemsPerPage={5} darkMode={darkMode}/>
       </Container>
     </div>
   );

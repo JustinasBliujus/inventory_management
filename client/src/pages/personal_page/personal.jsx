@@ -6,8 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/dataTable'; 
 import { Container } from 'react-bootstrap';
 import { userService } from '../../api/userService';
+import { useTranslation } from 'react-i18next';
+import { useAppContext  } from '../../appContext';
 
 function PersonalPage() {
+    const { darkMode } = useAppContext();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [inventories, setInventories] = useState([]);
     const [editableInventories, setEditableInventories] = useState([]);
@@ -144,8 +148,9 @@ function PersonalPage() {
     ];
 
     return (
+        <div>
+        <SharedNavbar />
         <Container className="mt-5 p-5">
-            <SharedNavbar />
             <div className="mb-5">
 
                 {error && (<div className="alert alert-danger" role="alert">
@@ -156,24 +161,25 @@ function PersonalPage() {
                     {success}
                 </div>)}
 
-                <p className="fs-1">Your Inventories</p>
+                <p className="fs-1">{t('yourInventories')}</p>
                 {error && (<div className="alert alert-danger" role="alert">{error}</div>)}
                 <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-                    <Button variant="danger" onClick={handleDeleteSelected} title="Delete Selected">
+                    <Button variant="danger" onClick={handleDeleteSelected} title={t('deleteSelected')}>
                         <FaTrash color='white' />
                     </Button>
-                    <Button variant="success" onClick={handleCreateInventory} title="Create New Inventory">
+                    <Button variant="success" onClick={handleCreateInventory} title={t('createNewInventory')}>
                         <FaPlus color='white' />
                     </Button>
                 </div>
-                <DataTable data={inventories} columns={personalColumns} itemsPerPage={5} />
+                <DataTable data={inventories} columns={personalColumns} itemsPerPage={5} darkMode={darkMode} />
             </div>
 
             <div>
-                <p className="fs-1">You have access to</p>
-                <DataTable data={editableInventories} columns={accessColumns} itemsPerPage={5} />
+                <p className="fs-1">{t('yourAccessableInventories')}</p>
+                <DataTable data={editableInventories} columns={accessColumns} itemsPerPage={5} darkMode={darkMode}/>
             </div>
         </Container>
+        </div>
     );
 }
 

@@ -2,8 +2,9 @@ import { useDrag, useDrop } from 'react-dnd';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
+import '../../../../components/darkMode.css'
 
-function DraggableField({ field, index, moveField, updateField, removeField, scrollContainerRef }) {
+function DraggableField({ field, index, moveField, updateField, removeField, scrollContainerRef, darkMode }) {
   const [, dropRef] = useDrop({
     accept: 'field',
     hover: (item, monitor) => {
@@ -30,7 +31,6 @@ function DraggableField({ field, index, moveField, updateField, removeField, scr
     type: 'field',
     item: { index },
     end: (item, monitor) => {
-
       if (!monitor.didDrop()) {
         const clientOffset = monitor.getClientOffset();
         const container = scrollContainerRef.current;
@@ -42,9 +42,7 @@ function DraggableField({ field, index, moveField, updateField, removeField, scr
             clientOffset.y < boundingRect.top ||
             clientOffset.y > boundingRect.bottom;
 
-          if (isOutside) {
-            removeField(item.index);
-          }
+          if (isOutside) removeField(item.index);
         }
       }
     },
@@ -55,25 +53,28 @@ function DraggableField({ field, index, moveField, updateField, removeField, scr
   const handleChange = (key, value) => updateField(index, { ...field, [key]: value });
 
   return (
-    <Card ref={ref} className="p-2 my-2 d-flex flex-column">
+    <Card
+      ref={ref}
+      className={`p-2 my-2 d-flex flex-column ${darkMode ? 'textarea-dark' : ''}`}
+    >
       <div className="d-flex justify-content-between align-items-center">
         <strong>{field.type}</strong>
-        <Button variant="outline-danger" size="sm" onClick={() => removeField(index)}>×</Button>
+        <Button variant={darkMode ? 'outline-light' : 'outline-danger'} size="sm" onClick={() => removeField(index)}>×</Button>
       </div>
 
       <Form.Control
-        className="mt-2"
         placeholder="Title"
         value={field.title}
         onChange={(e) => handleChange('title', e.target.value)}
         disabled={field.editable === false}
+        className={`${darkMode ? 'bg-dark-placeholder bg-dark text-white border-secondary mt-2' : 'bg-light-placeholder mt-2'}`}
       />
 
       <Form.Control
-        className="mt-2"
         placeholder="Description"
         value={field.desc}
         onChange={(e) => handleChange('desc', e.target.value)}
+        className={`${darkMode ? 'bg-dark-placeholder bg-dark text-white border-secondary mt-2' : 'bg-light-placeholder mt-2'}`}
       />
 
       <Form.Check
@@ -82,6 +83,7 @@ function DraggableField({ field, index, moveField, updateField, removeField, scr
         label="Show in table"
         checked={field.showInTable}
         onChange={(e) => handleChange('showInTable', e.target.checked)}
+        style={{ color: darkMode ? 'white' : undefined }}
       />
     </Card>
   );

@@ -4,14 +4,20 @@ import Form from 'react-bootstrap/Form';
 import { FaTrash, FaSave } from 'react-icons/fa';
 import DataTable from '../../components/dataTable';
 import { userService } from '../../../api/userService';
+import { useTranslation } from 'react-i18next';
+import '../../components/darkMode.css'
+import { useAppContext } from '../../../appContext';
 
 function AccessTab({ inventory, setInventory }) {
+  const { t } = useTranslation();
   const [isPublic, setIsPublic] = useState(false);
   const [editors, setEditors] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const searchTimeout = useRef(null);
+  const { darkMode } = useAppContext();
+
 
   useEffect(() => {
     if (!inventory) return;
@@ -77,7 +83,7 @@ function AccessTab({ inventory, setInventory }) {
 
     try{
       const inventoryId = updatedInventory.id;
-      console.log(updatedInventory.id) // 5 here
+      console.log(updatedInventory.id) 
       userService.addEditor(inventoryId);
     }
     catch{
@@ -121,7 +127,7 @@ function AccessTab({ inventory, setInventory }) {
   return (
     <div>
       <div className="d-flex align-items-center gap-4 mb-3">
-        <h4 className="mb-0">Accessibility: {isPublic ? 'Public' : 'Private'}</h4>
+        <h4 className="mb-0">{t('accessibility')}: {isPublic ? t('public') : t('private')}</h4>
         <Form.Check
           style={{ transform: 'scale(1.5)' }}
           type="switch"
@@ -134,10 +140,11 @@ function AccessTab({ inventory, setInventory }) {
       <div className="d-flex gap-2 mb-3 mt-2 flex-wrap align-items-start position-relative">
         <Form.Control
           type="email"
-          placeholder="Search user by email"
+          placeholder={t('searchUser')}
           value={emailInput}
           onChange={(e) => setEmailInput(e.target.value)}
           style={{ maxWidth: '300px' }}
+          className={darkMode ? 'textarea-dark' : ''}
         />
 
         {/* Autocomplete dropdown */}
@@ -156,21 +163,22 @@ function AccessTab({ inventory, setInventory }) {
         )}
 
         <Button variant="danger" onClick={handleRemoveSelected}>
-          <FaTrash color="white" /> Remove
+          <FaTrash color="white" />
         </Button>
       </div>
 
-      <h4>Editors with Access</h4>
+      <h4>{t('editorsWithAccess')}</h4>
       <DataTable
         data={editors}
         columns={columns}
         itemsPerPage={5}
         onRowClick={(row) => console.log('Clicked:', row)}
+        darkMode={darkMode}
       />
 
       <div className="mt-3 text-end">
         <Button variant="primary" onClick={handleSave}>
-          <FaSave className="me-2" /> Save Changes
+          <FaSave className="me-2" /> {t('saveChanges')}
         </Button>
       </div>
     </div>

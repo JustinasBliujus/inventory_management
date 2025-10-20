@@ -3,79 +3,107 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Button from 'react-bootstrap/Button';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import { FaUser } from 'react-icons/fa';
-import { useState, useEffect } from 'react';
 import Form from 'react-bootstrap/Form';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../appContext';
+import './darkMode.css';
+import { FaSun , FaRegMoon } from "react-icons/fa";
+import { useNavigate } from "react-router";
 
 function SharedNavbar({ onSearch }) {
-    const [darkMode, setDarkMode] = useState(false);
-    const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const { darkMode, toggleTheme, toggleLanguage, user } = useAppContext();
 
-    useEffect(() => {
-        document.body.className = darkMode ? 'bg-dark text-white' : 'bg-light text-dark';
-    }, [darkMode]);
+  const [query, setQuery] = useState("");
 
-    const toggleTheme = () => setDarkMode(prev => !prev);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (onSearch) onSearch(query);
+  };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (onSearch) onSearch(query);
-    };
+  return (
+    <Navbar
+      className='position-relative top-0 start-0'
+      expand="lg"
+      variant={darkMode ? "dark" : "light"}
+      bg={darkMode ? "dark" : "light"}
+    >
+      <Container fluid>
+        <div className='d-none d-lg-block px-5'></div>
+        <Navbar.Brand style={{cursor: "pointer"}} onClick={() => navigate('/main')} className="fw-bold d-none d-md-block">{t('projectName')}</Navbar.Brand>
 
-    return (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 1000 }}>
-            <Navbar expand="lg" className={darkMode ? 'navbar-dark bg-dark' : 'navbar-light bg-light'} style={{ borderBottom: darkMode ? '2px solid white' : '2px solid black' }}>
-                <Container>
-                    <Navbar.Brand href="#home" className="d-none d-md-inline">Final Project</Navbar.Brand>
-                    
-                    {/* Search Form */}
-                    <Form className="d-flex me-auto" style={{ maxWidth: '300px' }} onSubmit={handleSubmit}>
-                        <Form.Control
-                            type="search"
-                            placeholder="Search"
-                            className="me-2"
-                            aria-label="Search"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                        />
-                        <Button variant="outline-success" type="submit">Search</Button>
-                    </Form>
+        <Form className="d-flex me-auto ms-3" onSubmit={handleSubmit}>
+          <Form.Control
+            type="search"
+            placeholder={t('search')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className={darkMode ? 'textarea-dark me-2' : 'me-2'}
+          />
+          <Button variant={darkMode ? 'outline-light' : 'outline-success'} type="submit">{t('search')}</Button>
+        </Form>
 
-                    <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                    <Navbar.Collapse id="basic-navbar-nav">
-                        <Nav className="ms-auto" style={{ alignItems: 'center', gap: '15px' }}>
-                            {/* User info */}
-                            <div title="Admin" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                <FaUser size={24} color="green" />
-                                <Nav.Link href="#link" style={{ padding: 0 }}>Username</Nav.Link>
-                            </div>
+        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Collapse id="basic-navbar-nav">
+          <Nav className="ms-auto align-items-center nav-items-collapsed">
 
-                            {/* Dark Mode Button */}
-                            <Button onClick={toggleTheme} variant={darkMode ? 'outline-light' : 'outline-dark'}>
-                                {darkMode ? 'Light Mode' : 'Dark Mode'}
-                            </Button>
+            {/* User Info */}
+            <div title="Admin" className="d-flex align-items-center gap-2 d-none d-lg-flex" style={{cursor: "pointer"}} onClick={() => navigate('/personal')}>
+              <span className="fw-medium">{user.name ? user.name : ""}</span>
+            </div>
 
-                            {/* Language Dropdown */}
-                            <DropdownButton
-                                title="EN"
-                                variant='outline-primary'
-                                id="language-dropdown"
-                            >
-                                <Dropdown.Item href="#action/1">EN</Dropdown.Item>
-                                <Dropdown.Item href="#action/2">LT</Dropdown.Item>
-                            </DropdownButton>
+            <Button
+              className="d-lg-none w-100 my-2"
+              variant={darkMode ? 'outline-light' : 'outline-dark'}
+              onClick={toggleTheme}
+            >
+              {darkMode ? t('darkMode') : t('lightMode')}
+            </Button>
+            <div className="vr mx-2 d-none d-lg-block"></div>
+            <Form.Group className="d-none d-lg-flex align-items-center mx-3">
+                <Form.Check
+                type="switch"
+                id="theme-switch"
+                checked={darkMode}
+                onChange={toggleTheme}
+                className="form-switch big-switch"
+                />
+                <Form.Label htmlFor="theme-switch" className="ms-2">
+                    {darkMode ? <FaSun  color="white"></FaSun > : <FaRegMoon color="black"></FaRegMoon>}
+                </Form.Label>
+            </Form.Group>
+            <div className="vr mx-2 d-none d-lg-block"></div>
+            <Button
+              className="d-lg-none w-100 my-2"
+              variant="outline-primary"
+              onClick={toggleLanguage}
+            >
+              {i18n.language.toUpperCase()}
+            </Button>
 
-                            {/* Logout */}
-                            <Button variant="outline-danger">Log out</Button>
-                        </Nav>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
-        </div>
-    );
+            <Form.Group className="d-none d-lg-flex align-items-center mx-3">
+                <Form.Check
+                    type="switch"
+                    id="language-switch"
+                    checked={i18n.language === 'lt'}
+                    onChange={toggleLanguage}
+                    className="form-switch big-switch"
+                />
+                <Form.Label htmlFor="language-switch" className="ms-2">
+                    {i18n.language.toUpperCase()}
+                </Form.Label>
+            </Form.Group>
+            <div className="vr mx-2 d-none d-lg-block"></div>
+            <Button variant="outline-danger" className="w-100 w-lg-auto my-2">{t('logout')}</Button>
+
+          </Nav>
+        </Navbar.Collapse>
+        <div className='d-none d-lg-block px-5'></div>
+      </Container>
+    </Navbar>
+  );
 }
-
 
 export default SharedNavbar;

@@ -2,8 +2,10 @@ import Inventory from "../databaseModels/inventory.js";
 import Item from "../databaseModels/item.js";
 import User from "../databaseModels/user.js";
 import Chat from "../databaseModels/chat.js";
+import Tag from "../databaseModels/tag.js";
 import CustomID from "../databaseModels/customID.js";
 import '../databaseModels/associations.js';
+import { literal } from "sequelize";
 
 export async function createInventory(userId, name, description = '', customFields = {}) {
   try {
@@ -49,6 +51,12 @@ export async function getInventoryById(userId, inventoryId) {
         {
           model: CustomID,
           as: "customID",
+        },
+        {
+          model: Tag,
+          as: "tags",         
+          attributes: ["id", "name"],
+          through: { attributes: [] } 
         }
       ]
     });
@@ -173,7 +181,6 @@ export async function addItem(inventoryId, creatorEmail, itemData = {}) {
 }
 export async function deleteItem(item_id, inv_id, user_id) {
   try {
-    // 1. Find inventory and ensure it belongs to user
     const inventory = await Inventory.findOne({
       where: { id: inv_id, user_id }
     });
@@ -182,7 +189,6 @@ export async function deleteItem(item_id, inv_id, user_id) {
       return { success: false, message: "Inventory not found or permission denied" };
     }
 
-    // 2. Find the item in that inventory
     const item = await Item.findOne({
       where: { id: item_id, inventory_id: inv_id }
     });
@@ -191,12 +197,105 @@ export async function deleteItem(item_id, inv_id, user_id) {
       return { success: false, message: "Item not found in this inventory" };
     }
 
-    // 3. Delete the item
     await item.destroy();
 
     return { success: true, message: "Item deleted successfully" };
   } catch (error) {
     console.error("Error deleting item:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function saveInventoryTags(userId, inventoryId, tags) {
+  if (!Array.isArray(tags)) {
+    throw new Error("Tags must be an array");
+  }
+  if (tags.some(tag => !/^[a-zA-Z]{1,15}$/.test(tag))) {
+    throw new Error("Tags must be letters only, max 15 characters");
+  }
+  if (tags.length > 3) {
+    throw new Error("Maximum 3 tags allowed");
+  }
+
+  const inventory = await Inventory.findOne({
+    where: { id: inventoryId, user_id: userId }
+  });
+  if (!inventory) throw new Error("Inventory not found");
+
+  const tagRecords = [];
+  for (const tagName of tags) {
+    const [tag] = await Tag.findOrCreate({ where: { name: tagName } });
+    tagRecords.push(tag);
+  }
+
+  await inventory.setTags(tagRecords);
+
+  return tagRecords.map(t => t.name);
+}
+
+export async function getLastInventories(limit = 10) {
+  try {
+    const inventories = await Inventory.findAll({
+    attributes: ['id', 'name', 'description', 'category', 'createdAt'],
+    include: [
+      {
+        model: User,
+        attributes: ['id', 'email', 'name'] 
+      }
+    ],
+    order: [['createdAt', 'DESC']],
+    limit
+  });
+
+    return { success: true, inventories };
+  } catch (err) {
+    console.error("Error fetching last inventories:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getMostPopularInventories(limit = 10) {
+  try {
+    const inventories = await Inventory.findAll({
+      attributes: [
+        'id',
+        'name',
+        'description',
+        'category',
+        [literal(`(
+          SELECT COUNT(*)
+          FROM items AS item
+          WHERE item.inventory_id = inventory.id
+        )`), 'itemCount']
+      ],
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'email', 'name']
+        }
+      ],
+      order: [[literal('itemCount'), 'DESC']],
+      limit
+    });
+
+    return { success: true, inventories };
+  } catch (err) {
+    console.error("Error fetching popular inventories:", err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getRandomTags(limit = 10) {
+  try {
+    const tags = await Tag.findAll({
+      attributes: ['id', 'name'],
+      order: literal('RAND()'), 
+      limit
+    });
+
+    return { success: true, tags };
+  } catch (err) {
+    console.error('Error fetching random tags:', err);
+    return { success: false, error: err.message };
   }
 }

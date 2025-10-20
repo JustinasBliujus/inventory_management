@@ -27,4 +27,9 @@ export const userService = {
   addItem: (inventoryId, itemData) => axiosInstance.post('/addItem', { inventoryId, itemData }),
   searchUsersByEmail: (email) => axiosInstance.post('/search', { email }),
   deleteitem: (item_id, inv_id, creator_id) => axiosInstance.post('/deleteItem', { item_id, inv_id, creator_id }),
+  saveTags: (data) => axiosInstance.post('/saveTags', data),
+  getLastInventories: () => axiosInstance.get('/inventories/last'),
+  getPopularInventories: () => axiosInstance.get('/inventories/popular'),
+  getRandomTags: () => axiosInstance.get('/random'),
+  getCurrentUser: () => axiosInstance.get('/session-user'),
 };

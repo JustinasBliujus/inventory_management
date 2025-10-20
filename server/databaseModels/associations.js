@@ -2,6 +2,7 @@ import User from "./user.js";
 import Inventory from "./inventory.js";
 import Item from "./item.js";
 import Chat from "./chat.js";
+import Tag from "./tag.js";
 import CustomID from "./customID.js";
 
 User.hasMany(Inventory, { foreignKey: "user_id", onDelete: "CASCADE" });
@@ -18,3 +19,6 @@ CustomID.belongsTo(Inventory, { foreignKey: "inventory_id", onDelete: "CASCADE" 
 
 Inventory.belongsToMany(User, { through: "inventory_editors", as: "editors", foreignKey: "inventory_id", otherKey: "user_id" });
 User.belongsToMany(Inventory, { through: "inventory_editors", as: "editable_inventories", foreignKey: "user_id", otherKey: "inventory_id" });
+
+Inventory.belongsToMany(Tag, { through: "inventory_tag", as: "tags", foreignKey: "inventory_id", otherKey: "tag_id" });
+Tag.belongsToMany(Inventory, { through: "inventory_tag", as: "inventories", foreignKey: "tag_id", otherKey: "inventory_id" });

@@ -1,0 +1,82 @@
+body.bg-dark .pagination > li > a,
+body.bg-dark .pagination > li > span {
+    background-color: #343a40;
+    color: #f8f9fa;
+    border: 1px solid #495057;
+}
+
+body.bg-dark .pagination > li > a:focus,
+body.bg-dark .pagination > li > a:hover,
+body.bg-dark .pagination > li > span:focus,
+body.bg-dark .pagination > li > span:hover {
+    color: #212529;
+    background-color: #495057;
+    border-color: #6c757d;
+}
+
+body.bg-dark .pagination > .active > a,
+body.bg-dark .pagination > .active > span {
+    color: #fff;
+    background-color: #0d6efd;
+    border: 1px solid #0d6efd;
+}
+
+body.bg-dark .pagination > .active > a:hover,
+body.bg-dark .pagination > .active > span:hover {
+    background-color: #0d6efd;
+    border: 1px solid #0d6efd;
+}
+.nav-tabs-dark {
+  border-bottom: 1px solid #555;
+}
+
+.nav-tabs-dark .nav-link {
+  color: #ccc;
+  background-color: #222;
+  border: 1px solid transparent;
+}
+
+.nav-tabs-dark .nav-link:hover {
+  color: #fff;
+  background-color: #333;
+}
+
+.nav-tabs-dark .nav-link.active {
+  color: #fff;
+  background-color: #0d6efd; 
+  border-color: #0d6efd;
+  font-weight: bold;
+}
+
+.nav-tabs-dark .nav-item.show .nav-link,
+.nav-tabs-dark .nav-link:focus {
+  color: #fff;
+  background-color: #444;
+}
+.textarea-dark::placeholder,
+.form-control-dark::placeholder {
+  color: #888; 
+  opacity: 1; 
+}
+
+.textarea-dark {
+  background-color: #1a1a1a !important;
+  color: #f0f0f0 !important;
+  border: 1px solid #555 !important;
+}
+
+.chat-container-dark {
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+  border-color: #444;
+}
+
+.chat-post-dark {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+  border-color: #555;
+}
+.bg-dark-placeholder::placeholder {
+  color: #888; 
+  opacity: 1;   
+}

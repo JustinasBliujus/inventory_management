@@ -9,9 +9,14 @@ import { createNewElement, renderValue } from './components/elementUtils';
 import DraggableElement from './components/draggableElement';
 import Tooltip from 'react-bootstrap/Tooltip';
 import { userService } from '../../../../api/userService';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../../../appContext';
+import '../../../components/darkMode.css'
 
 function IdBuilderTab({ inventory, setInventory }) {
-  
+  const { t } = useTranslation();
+  const { darkMode } = useAppContext();
+
   const [elements, setElements] = useState([]);
   const scrollContainerRef = useRef(null);
 
@@ -94,9 +99,9 @@ const handleSave = async () => {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className='p-2'>
-        <h4>ID Builder</h4>
+        <h4>{t('idBuilder')}</h4>
         <p>
-          Configure the ID structure by combining elements (max {MAX_ELEMENTS}).<br/>Drag to reorder, click × or drag out to remove.
+          {t('idBuilderExplanation', {count: MAX_ELEMENTS})}
         </p>
         <div className="d-flex flex-wrap gap-2 mb-3">
           {ELEMENT_TYPES.map((t) => (
@@ -112,7 +117,7 @@ const handleSave = async () => {
               }
             >
                 <Button
-                  variant="outline-primary"
+                  variant={darkMode ? 'outline-light' : 'outline-primary'}
                   size="sm"
                   disabled={elements.length >= MAX_ELEMENTS}
                   onClick={() =>
@@ -126,20 +131,21 @@ const handleSave = async () => {
           ))}
         </div>
         <Button variant="success" onClick={handleSave}>
-            Save Custom ID
+            {t('saveId')}
         </Button>
-        <h5 className="mt-3">Preview ID:</h5>
-        <Card className="p-2 mb-3">
+        <h5 className="mt-3">{t('previewId')}</h5>
+        <Card className={`p-2 mb-3 ${darkMode ? 'textarea-dark' : ''}`}>
           {elements.length > 0 ? (
             elements.map(el => el.value).join('-')
           ) : (
-            <span className="text-muted">No ID defined</span>
+            <span className="text-muted">{t('noId')}</span>
           )}
         </Card>
 
-        {elements.length === 0 && <p className="text-muted">No elements added yet.</p>}
+        {elements.length === 0 && <p className="text-muted">{t('noElements')}</p>}
 
         <div
+      
           ref={scrollContainerRef}
           style={{
             maxHeight: '40vh',
@@ -158,6 +164,7 @@ const handleSave = async () => {
               updateElement={updateElement}
               removeElement={removeElement}
               scrollContainerRef={scrollContainerRef}
+              darkMode={darkMode}
             />
           ))}
         </div>

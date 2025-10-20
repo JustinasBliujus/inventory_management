@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import { Container } from 'react-bootstrap';
 import { userService } from '../../../api/userService';
+import SharedNavbar from '../../components/navbar';
+import '../../components/darkMode.css'
+import { useAppContext } from '../../../appContext';
 
 function AddItemsPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { inventory } = location.state || {};
-
+  const { darkMode } = useAppContext();
   const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +50,6 @@ function AddItemsPage() {
   setLoading(true);
 
   try {
-    // Map formValues to the structure of Item model
     const itemData = {};
 
     Object.entries(formValues).forEach(([key, value]) => {
@@ -58,10 +60,7 @@ function AddItemsPage() {
       else if (key.startsWith('bool')) itemData[`custom_${key}`] = value;
     });
 
-    // Add inventory_id and creator_email if needed
     itemData.inventory_id = inventory.id;
-    // Example: assume you have user email in session/context
-    // itemData.creator_email = currentUser.email;
 
     const response = await userService.addItem(inventory.id, itemData);
 
@@ -76,6 +75,8 @@ function AddItemsPage() {
 
 
   return (
+    <div>
+      <SharedNavbar></SharedNavbar>
     <Container className='p-5 mt-2'>
       <h2 className='text-center mb-4'>Add New Item to Inventory: {inventory.name}</h2>
       <Form onSubmit={handleSubmit}>
@@ -88,6 +89,7 @@ function AddItemsPage() {
             case 'line':
               inputElement = (
                 <Form.Control
+                  className={darkMode ? 'textarea-dark' : ''}
                   type="text"
                   value={formValues[field.key] || ''}
                   onChange={e => handleChange(field.key, e.target.value)}
@@ -97,6 +99,7 @@ function AddItemsPage() {
             case 'multiline':
               inputElement = (
                 <Form.Control
+                  className={darkMode ? 'textarea-dark' : ''}
                   as="textarea"
                   rows={3}
                   value={formValues[field.key] || ''}
@@ -107,6 +110,7 @@ function AddItemsPage() {
             case 'number':
               inputElement = (
                 <Form.Control
+                  className={darkMode ? 'textarea-dark' : ''}
                   type="number"
                   value={formValues[field.key] || ''}
                   onChange={e => handleChange(field.key, e.target.value)}
@@ -116,6 +120,7 @@ function AddItemsPage() {
             case 'url':
               inputElement = (
                 <Form.Control
+                  className={darkMode ? 'textarea-dark' : ''}
                   type="url"
                   value={formValues[field.key] || ''}
                   onChange={e => handleChange(field.key, e.target.value)}
@@ -150,6 +155,7 @@ function AddItemsPage() {
         </Button>
       </Form>
     </Container>
+    </div>
   );
 }
 

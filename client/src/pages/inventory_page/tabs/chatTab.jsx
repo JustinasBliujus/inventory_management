@@ -5,11 +5,17 @@ import ReactMarkdown from 'react-markdown';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
 import { userService } from '../../../api/userService';
+import { useTranslation } from 'react-i18next';
+import { useAppContext } from '../../../appContext';
+import '../../components/darkMode.css'
 
 function ChatTab({ inventory, setInventory }) {
+    const { t } = useTranslation();
+    const { darkMode } = useAppContext();
+
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState("");
-
+    
     useEffect(() => {
         if (inventory?.chats) {
             const mappedPosts = inventory.chats.map(chat => ({
@@ -69,23 +75,23 @@ function ChatTab({ inventory, setInventory }) {
 
     const markdownHint = (
         <Tooltip id="markdown-tooltip">
-            <div style={{ fontSize: '0.85rem' }}>
-                <div><strong>Headers:</strong> <code># H1</code>, <code>## H2</code>, etc.</div>
-                <div><strong>Bold:</strong> <code>**bold**</code></div>
-                <div><em>Italic:</em> <code>*italic*</code></div>
-                <div>Unordered list: <code>- item</code></div>
-                <div>Ordered list: <code>1. item</code></div>
-                <div>Links: <code>[text](https://example.com)</code></div>
+            <div>
+                <div><strong>{t('header')}</strong> <code>{t('headerExample')}</code></div>
+                <div><strong>{t('bold')}</strong> <code>{t('boldExample')}*</code></div>
+                <div><em>{t('italic')}</em> <code>{t('italicExample')}</code></div>
+                <div>{t('listUnordered')}<code>{t('listUnorderedExample')}</code></div>
+                <div>{t('listOrdered')}<code>{t('listOrderedExample')}</code></div>
+                <div>{t('links')}<code>[text]({t('linkExample')})</code></div>
             </div>
         </Tooltip>
     );
 
     return (
         <div>
-            <h4>Discussion</h4>
+            <h4>{t('discussion')}</h4>
 
             <div 
-                className="mb-3" 
+                className={darkMode ? 'chat-container-dark mb-3' : 'mb-3'}
                 style={{
                     maxHeight: '40vh',
                     overflowY: 'auto',
@@ -95,10 +101,10 @@ function ChatTab({ inventory, setInventory }) {
                 }}
             >
                 {posts.map(post => (
-                    <div key={post.id} className="mb-3 p-2 border rounded">
+                    <div key={post.id} className={darkMode ? '.chat-post-dark mb-3 p-2 border rounded' : 'mb-3 p-2 border rounded'}>
                         <div className="mb-1">
                             <a href={`/personal/${post.userId}`}><strong>{post.userName}</strong></a>{" "}
-                            <small className="text-muted">{post.createdAt.toLocaleString()}</small>
+                            <small className={darkMode ? 'text-light' : 'text-muted'}>{post.createdAt.toLocaleString()}</small>
                         </div>
                         <ReactMarkdown>{post.content}</ReactMarkdown>
                     </div>
@@ -110,9 +116,10 @@ function ChatTab({ inventory, setInventory }) {
                     <Form.Control
                         as="textarea"
                         rows={3}
-                        placeholder="Write a post using Markdown..."
+                        placeholder={t('writePost')}
                         value={newPost}
                         onChange={e => setNewPost(e.target.value)}
+                        className={darkMode ? 'textarea-dark' : ''}
                     />
                     <OverlayTrigger placement="auto" overlay={markdownHint} flip>
                         <Button
@@ -130,7 +137,7 @@ function ChatTab({ inventory, setInventory }) {
                         </Button>
                     </OverlayTrigger>
                 </Form.Group>
-                <Button type="submit" variant="primary">Post</Button>
+                <Button type="submit" variant="primary">{t('post')}</Button>
             </Form>
         </div>
     );

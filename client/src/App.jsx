@@ -6,12 +6,14 @@ import SearchPage from './pages/search_page/search';
 import PersonalPage from './pages/personal_page/personal';
 import InventoryPage from './pages/inventory_page/inventory';
 import ItemsPage from './pages/items_page/items';
-import AddItemsPage from './pages/inventory_page/tabs/add_items_page';
+import AddItemsPage from './pages/inventory_page/tabs/addItemsPage';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import PrivateRoute from './privateRoute';
+import { AppProvider } from './appContext';
 
 function App() {
   return (
+    <AppProvider>
     <Router>
       <Routes>
         {/* Public routes */}
@@ -77,6 +79,7 @@ function App() {
         />
       </Routes>
     </Router>
+    </AppProvider>
   );
 }
 
