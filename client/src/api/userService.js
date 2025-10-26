@@ -19,10 +19,14 @@ export const userService = {
   saveInventory: (inventory) => axiosInstance.post(`/saveInventory`, inventory),
   saveCustomID: (customID) => axiosInstance.post('/saveCustomID', { customID }),
   saveChat: (data) => axiosInstance.post(`/saveChat`, data),
-  getUsersInventories: () => axiosInstance.get(`/getUsersInventories`),
-  getEditableInventories: () => axiosInstance.get(`/getEditableInventories`),
+
+  getUsersInventories: (userId) => axiosInstance.get(`/getUsersInventories/${userId}`),
+
+  getEditableInventories: (userId) => axiosInstance.get(`/getEditableInventories/${userId}`),
+
   deleteInventory: (inventoryId) => axiosInstance.post('/deleteInventory', { inventoryId }),
-  addEditor: (data) => axiosInstance.post('/addEditor', {data}),
+  addEditor: (editors, inventoryId) => 
+    axiosInstance.post('/addEditor', { editors, inventoryId }),
   deleteEditor: (inventoryId) => axiosInstance.post('/deleteEditor', { inventoryId }),
   addItem: (data) => axiosInstance.post('/addItem', data),
   searchUsersByEmail: (email) => axiosInstance.post('/search', { email }),
@@ -32,4 +36,9 @@ export const userService = {
   getPopularInventories: () => axiosInstance.get('/inventories/popular'),
   getRandomTags: () => axiosInstance.get('/random'),
   getCurrentUser: () => axiosInstance.get('/session-user'),
+  getInventoriesByTag: (tagId) => 
+    axiosInstance.get('/inventoriesByTag', {
+      params: { tagId }  
+  }),
+  logout: () => axiosInstance.post('/logout')
 };

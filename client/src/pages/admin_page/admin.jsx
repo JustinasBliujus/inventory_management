@@ -28,6 +28,7 @@ function AdminPage() {
     setLoading(true);
     try {
       const res = await userService.getUsers();
+      
       const usersArray = res.data.users.map(u => ({
         ...u,
         selected: false,
@@ -39,6 +40,8 @@ function AdminPage() {
         is_admin: u.is_admin == 1 ? 'True' : "False",
         last_login: u.last_login || '-'
       }));
+      
+      console.log("User IDs:", usersArray.map(u => u.id));
       setUsers(usersArray);
       setSelectAll(false);
     } catch (err) {
@@ -62,8 +65,13 @@ function AdminPage() {
   };
 
   const handleSelectRow = (id) => {
-    setUsers(users.map(user => user.id === id ? { ...user, selected: !user.selected } : user));
-    const allSelected = users.every(u => u.id === id ? !u.selected : u.selected);
+    console.log(id, " ID")
+    const updatedUsers = users.map(user =>
+      user.id === id ? { ...user, selected: !user.selected } : user
+    );
+
+    const allSelected = updatedUsers.every(u => u.selected);
+    setUsers(updatedUsers);
     setSelectAll(allSelected);
   };
 
@@ -125,7 +133,21 @@ function AdminPage() {
     { key: 'id', label: '#', sortable: true, className: 'd-none d-sm-table-cell' },
     { key: 'name', label: 'First Name', sortable: true, className: 'd-none d-sm-table-cell' },
     { key: 'surname', label: 'Last Name', sortable: true, className: 'd-none d-sm-table-cell' },
-    { key: 'email', label: 'Email', sortable: true },
+    { 
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+      render: (value, row) => (
+        console.log('Render value:', value, 'Row:', row),
+        <span
+          className="text-decoration-none d-none d-sm-table-cell"
+          style={{ cursor: 'pointer', color: 'blue' }}
+          onClick={() => navigate('/personal', { state: { userId: row.id, name: row.name } })}
+        >
+          {value}
+        </span>
+      ) 
+    },
     { key: 'status', label: 'Status', sortable: true },
     { key: 'is_admin', label: 'Admin', sortable: true },
     { key: 'last_login', label: 'Last Login', sortable: true, className: 'd-none d-lg-table-cell' }

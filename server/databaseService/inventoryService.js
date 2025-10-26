@@ -29,10 +29,11 @@ export async function createInventory(userId, name, description = '', customFiel
 
 
 
-export async function getInventoryById(userId, inventoryId) {
+export async function getInventoryById(inventory_id) {
   try {
+    console.log(inventory_id, "IN INVENTORY SERVICE")
     const inventory = await Inventory.findOne({
-      where: { id: inventoryId, user_id: userId },
+      where: { id: inventory_id },
       include: [
         {
           model: Item,
@@ -137,58 +138,66 @@ export async function saveCustomID(user_id, customID) {
     return { success: false, error };
   }
 }
-export async function addEditor(inventoryId, userId) {
-  try {
-    const inventory = await Inventory.findByPk(inventoryId);
-    const user = await User.findByPk(userId);
 
-    if (!inventory || !user) {
-      throw new Error('Inventory or User not found');
+export async function addEditor(editors, inventory_id) {
+  try {
+
+    const inventory = await Inventory.findByPk(inventory_id);
+    if (!inventory) {
+      throw new Error('Inventory not found');
     }
 
-    await inventory.addEditor(user);
+    for (const email of editors) {
+      const user = await User.findOne({ where: { email } });
+      if (user) {
+        await inventory.addEditor(user); 
+      } else {
+        console.warn(`User with email ${email} not found`);
+      }
+    }
 
-    return { success: true, message: 'User added as editor successfully' };
+    return { success: true, message: 'Editors added successfully' };
   } catch (error) {
-    console.error('Error adding editor:', error);
+    console.error('Error adding editors:', error);
     return { success: false, error: error.message };
   }
 }
 
-export async function upsertItem(itemData, item_id) {
+export async function upsertItem(itemData, item_id, creator_email) {
   try {
     const inventory = await Inventory.findByPk(itemData.inventory_id);
     if (!inventory) {
       throw new Error("Inventory not found");
     }
-    console.log(item_id)
-    let item = await Item.findOne({
-      where: { inventory_id: itemData.inventory_id, id: item_id },
-    });
 
-    if (item) {
-   
-      await item.update(itemData);
-      console.log(`Item ${item_id} updated successfully.`);
-    } else {
-    
-      item = await Item.create({
-        ...itemData,
-        item_id: item_id,
-        inventory_id: itemData.inventory_id,
+    let item;
+
+    if (item_id) {
+      item = await Item.findOne({
+        where: { inventory_id: itemData.inventory_id, id: item_id },
       });
-      console.log(`Item ${item_id} created successfully.`);
+
+      if (item) {
+        await item.update(itemData);
+        console.log(`Item ${item_id} updated successfully.`);
+      }
     }
 
-    return item;
+    if (!item) {
+      item = await Item.create({
+        ...itemData,
+        inventory_id: itemData.inventory_id,
+        creator_email: creator_email,
+      });
+      console.log(`Item ${item.id} created successfully.`);
+    }
 
+    return { success: true, item };
   } catch (error) {
     console.error("Error upserting item:", error);
-    throw error;
+    return { success: false, error: error.message };
   }
 }
-
-
 
 export async function deleteItem(item_id, inv_id, user_id) {
   try {
@@ -247,11 +256,11 @@ export async function saveInventoryTags(userId, inventoryId, tags) {
 export async function getLastInventories(limit = 10) {
   try {
     const inventories = await Inventory.findAll({
-    attributes: ['id', 'name', 'description', 'category', 'createdAt'],
+    attributes: ['id','user_id', 'name', 'description', 'category', 'createdAt'],
     include: [
       {
         model: User,
-        attributes: ['id', 'email', 'name'] 
+        attributes: ['id','email', 'name'] 
       }
     ],
     order: [['createdAt', 'DESC']],
@@ -270,6 +279,7 @@ export async function getMostPopularInventories(limit = 10) {
     const inventories = await Inventory.findAll({
       attributes: [
         'id',
+        'user_id',
         'name',
         'description',
         'category',
@@ -300,6 +310,11 @@ export async function getRandomTags(limit = 10) {
   try {
     const tags = await Tag.findAll({
       attributes: ['id', 'name'],
+      include: [{
+        model: Inventory,
+        as: 'inventories',  
+        required: true      
+      }],
       order: literal('RAND()'), 
       limit
     });
@@ -309,4 +324,18 @@ export async function getRandomTags(limit = 10) {
     console.error('Error fetching random tags:', err);
     return { success: false, error: err.message };
   }
+}
+
+export async function getInventoriesByTag(tagId) {
+  const tag = await Tag.findByPk(tagId, {
+    include: [{
+      model: Inventory,
+      as: 'inventories',
+      through: { attributes: [] } 
+    }]
+  });
+
+  if (!tag) return [];
+
+  return tag.inventories; 
 }

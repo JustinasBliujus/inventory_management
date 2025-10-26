@@ -4,25 +4,36 @@ import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../appContext';
 import './darkMode.css';
 import { FaSun , FaRegMoon } from "react-icons/fa";
 import { useNavigate } from "react-router";
+import { userService } from '../../api/userService';
 
 function SharedNavbar({ onSearch }) {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const { darkMode, toggleTheme, toggleLanguage, user } = useAppContext();
+  const { darkMode, toggleTheme, toggleLanguage, user, setUser } = useAppContext();
 
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!user) {
+      userService.getCurrentUser("/session-user")
+        .then(res => {
+          if (res.data.success) setUser(res.data.user);
+        })
+        .catch(err => console.error("Failed to fetch user:", err));
+    }
+  }, [user, setUser]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (onSearch) onSearch(query);
   };
-
+  
   return (
     <Navbar
       className='position-relative top-0 start-0'
@@ -37,7 +48,7 @@ function SharedNavbar({ onSearch }) {
         <Form className="d-flex me-auto ms-3" onSubmit={handleSubmit}>
           <Form.Control
             type="search"
-            placeholder={t('search')}
+            placeholder={t('fullSearch')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={darkMode ? 'textarea-dark me-2' : 'me-2'}
@@ -50,7 +61,7 @@ function SharedNavbar({ onSearch }) {
           <Nav className="ms-auto align-items-center nav-items-collapsed">
 
             {/* User Info */}
-            <div title="Admin" className="d-flex align-items-center gap-2 d-none d-lg-flex" style={{cursor: "pointer"}} onClick={() => navigate('/personal')}>
+            <div title="Admin" className="d-flex align-items-center gap-2 d-none d-lg-flex" style={{cursor: "pointer"}} onClick={() => navigate('/personal', { state: { userId: user.id } })}>
               <span className="fw-medium">{user?.name || ""}</span>
             </div>
 
@@ -96,7 +107,17 @@ function SharedNavbar({ onSearch }) {
                 </Form.Label>
             </Form.Group>
             <div className="vr mx-2 d-none d-lg-block"></div>
-            <Button variant="outline-danger" className="w-100 w-lg-auto my-2">{t('logout')}</Button>
+            <Button 
+            variant="outline-danger" 
+            onClick={async () => {
+            try {
+              await userService.logout();
+              navigate('/login'); 
+            } catch (err) {
+              console.error("Logout failed:", err);
+            }
+          }}
+            className="w-100 w-lg-auto my-2">{t('logout')}</Button>
 
           </Nav>
         </Navbar.Collapse>

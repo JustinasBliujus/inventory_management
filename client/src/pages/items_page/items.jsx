@@ -5,15 +5,18 @@ import { FaEdit } from "react-icons/fa";
 import SharedNavbar from '../components/navbar';
 import {Container} from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../../appContext';
+import { useTranslation } from 'react-i18next';
 
 function ItemsPage() {
+    const { t } = useTranslation();
+    const { darkMode, user } = useAppContext();
     const location = useLocation();
     const navigate = useNavigate();
     const { item_id, inventory } = location.state || {};
     const [imgLoaded, setImgLoaded] = useState(false);
-
     const requiredItem = Object.values(inventory.items).find(i => i.id = item_id);
-    console.log(JSON.stringify(requiredItem,null,2)+' ITEEEEM')
+    const isEditor = (inventory.user_id === user.id) || inventory.is_public === true;
 
     if (!item_id) return <div>No item data found!</div>;
     const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
@@ -38,35 +41,53 @@ function ItemsPage() {
         <div>
             <SharedNavbar></SharedNavbar>
         <Container className='w-75 my-5'>
-            <Card>
-                <Button onClick={() => navigate('/addItem', { state: { inventory, mapping, item_id } })}>
-                    <FaEdit color="white" ></FaEdit>
-                </Button>
+            <Card
+                className={darkMode ? 'bg-dark text-light' : ''}
+                style={darkMode ? { border: '1px solid #555' } : {}}
+                >
+                <div className="d-flex justify-content-end p-2" title={!isEditor ? t('noWriteAccess') : t('edit')}>
+                    <Button
+                        disabled = {!isEditor}
+                        variant='primary'
+                        onClick={() => navigate('/addItem', { state: { inventory, mapping, item_id } })}
+                    >
+                        <FaEdit color="white" />
+                    </Button>
+                </div>
+
                 {requiredItem.imageUrl && !imgLoaded && (
                     <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-                        <Spinner animation="border" />
+                    <Spinner animation="border" />
                     </div>
                 )}
+
                 {requiredItem.imageUrl && (
                     <Card.Img
-                        variant="top"
-                        src={requiredItem.imageUrl}
-                        alt={requiredItem.name}
-                        style={{ maxHeight: '400px', objectFit: 'cover', display: imgLoaded ? 'block' : 'none' }}
-                        onLoad={() => setImgLoaded(true)}
+                    variant="top"
+                    src={requiredItem.imageUrl}
+                    alt={requiredItem.name}
+                    style={{
+                        maxHeight: '400px',
+                        objectFit: 'cover',
+                        display: imgLoaded ? 'block' : 'none',
+                        filter: darkMode ? 'brightness(0.8)' : 'none',
+                    }}
+                    onLoad={() => setImgLoaded(true)}
                     />
                 )}
+
                 <Card.Body>
                     <Card.Title style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>
-                        {`Item added by ${requiredItem.creator_email}`}
+                        {t('itemAddedBy', { email: requiredItem.creator_email })}
                     </Card.Title>
-                    {
-                        mapping.map((it,index) => (
-                            <Card.Text key={index}><strong>{`${it.label}: `}</strong> {it.value || 'N/A'}</Card.Text>
-                        ))
-                    }
+                    {mapping.map((it, index) => (
+                    <Card.Text key={index}>
+                        <strong>{`${it.label}: `}</strong> {it.value || 'N/A'}
+                    </Card.Text>
+                    ))}
                 </Card.Body>
-            </Card>
+                </Card>
+
         </Container>
         </div>
     );

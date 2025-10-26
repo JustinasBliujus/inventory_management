@@ -2,7 +2,7 @@ import RegisterPage from './pages/register_page/register';
 import LoginPage from './pages/login_page/login';
 import AdminPage from './pages/admin_page/admin';
 import MainPage from './pages/main_page/main';
-import SearchPage from './pages/search_page/search';
+import SearchResultsPage from './pages/search_page/search';
 import PersonalPage from './pages/personal_page/personal';
 import InventoryPage from './pages/inventory_page/inventory';
 import ItemsPage from './pages/items_page/items';
@@ -41,7 +41,7 @@ function App() {
           path="/search"
           element={
             <PrivateRoute>
-              <SearchPage />
+              <SearchResultsPage />
             </PrivateRoute>
           }
         />

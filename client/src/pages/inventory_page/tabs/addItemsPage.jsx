@@ -15,7 +15,6 @@ function AddItemsPage() {
   const { darkMode } = useAppContext();
   const [loading, setLoading] = useState(false);
 
-  if (!inventory) return <p>No inventory selected</p>;
   console.log(item_id+" IN AD ITEMS")
   const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
 
@@ -32,6 +31,8 @@ function AddItemsPage() {
   });
 
   const [formValues, setFormValues] = useState(initialValues);
+
+  if (!inventory) return <p>No inventory selected</p>;
 
   const formFields = [];
   for (let type of customTypes) {
@@ -70,7 +71,8 @@ function AddItemsPage() {
       });
 
       itemData.inventory_id = inventory.id;
-      console.log(item_id+" BEFORE SENDING")
+      console.log(item_id, "BEFORE SENDING");
+      console.log(itemData, "BEFORE SENDING");
       const response = await userService.addItem( {itemData, item_id} );
 
       console.log('Item added successfully:', response.data);

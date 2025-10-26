@@ -1,69 +1,73 @@
+import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import SharedNavbar from '../components/navbar';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import { Table, Container, Card } from 'react-bootstrap';
+import DataTable from '../components/dataTable';
+import { Container, Alert } from 'react-bootstrap';
+import { useAppContext } from '../../appContext';
 
-// Sample search results data
-const sampleResults = [
-  { name: 'Inventory A', description: 'Electronics and gadgets', creator: 'Alice', items: 45 },
-  { name: 'Inventory B', description: 'Books and novels', creator: 'Bob', items: 32 },
-  { name: 'Inventory C', description: 'Sports equipment', creator: 'Charlie', items: 20 },
-  { name: 'Inventory D', description: 'Office supplies', creator: 'David', items: 12 },
-  { name: 'Inventory E', description: 'Kitchen items', creator: 'Eve', items: 25 },
-];
+function SearchResultsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { darkMode } = useAppContext();
 
-function SearchPage() {
-  const results = sampleResults;
+  const [inventories, setInventories] = useState([]);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (location.state && location.state.inventories) {
+      setInventories(location.state.inventories);
+    } else {
+      setError('No search results found.');
+    }
+  }, [location.state]);
+
+  const columns = [
+    { key: 'id', label: '#', sortable: true },
+    { 
+      key: 'name', 
+      label: 'Name', 
+      sortable: true,
+      render: (value, row) => (
+        <span 
+          style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }}
+          onClick={() => handleRowClick(row)}
+        >
+          {value}
+        </span>
+      )
+    },
+    { key: 'description', label: 'Description', sortable: true },
+    { key: 'category', label: 'Category', sortable: true },
+    { 
+      key: 'is_public', 
+      label: 'Public', 
+      sortable: true,
+      render: (value) => (value == 1 ? 'Yes' : 'No')
+    },
+    { key: 'createdAt', label: 'Created At', sortable: true },
+  ];
+
+
+  const handleRowClick = (row) => {
+    navigate('/inventory', { state: row.id });
+  };
 
   return (
-    <div className="vh-100 bg-light">
+    <div>
       <SharedNavbar />
-
-      <Container className="mt-5 p-3 p-md-5">
-        <Card className="shadow-sm rounded-4 p-3 p-md-4">
-          <Card.Header className="bg-success text-white fw-bold rounded-top-4 fs-5 fs-md-4">
-            Search Results ({results.length})
-          </Card.Header>
-
-          {results.length > 0 ? (
-            <div className="table-responsive">
-              <Table striped bordered hover className="mb-0 align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th className="fs-6 fs-md-5">#</th>
-                    <th className="fs-6 fs-md-5">Name</th>
-                    <th className="fs-6 fs-md-5">Description</th>
-                    <th className="fs-6 fs-md-5">Creator</th>
-                    <th className="fs-6 fs-md-5">Items</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {results.map((inv, i) => (
-                    <tr key={i} className="py-2 py-md-3">
-                      <td className="fs-6 fs-md-5">{i + 1}</td>
-                      <td>
-                        <a href="/" className="text-decoration-none text-success fw-bold fs-6 fs-md-5">
-                          {inv.name}
-                        </a>
-                      </td>
-                      <td className="fs-6 fs-md-5">{inv.description || '-'}</td>
-                      <td>
-                        <a href="/" className="text-decoration-none text-secondary fs-6 fs-md-5">
-                          {inv.creator}
-                        </a>
-                      </td>
-                      <td className="fs-6 fs-md-5">{inv.items}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center p-5 fs-6 fs-md-5 text-muted">No results found.</div>
-          )}
-        </Card>
+      <Container className="mt-5">
+        {error && <Alert variant="danger">{error}</Alert>}
+        {!error && (
+          <DataTable
+            data={inventories}
+            columns={columns}
+            itemsPerPage={10}
+            darkMode={darkMode}
+          />
+        )}
       </Container>
     </div>
   );
 }
 
-export default SearchPage;
+export default SearchResultsPage;

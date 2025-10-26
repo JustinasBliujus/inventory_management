@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
-import { FaTrash, FaSave } from 'react-icons/fa';
+import { FaTrash } from 'react-icons/fa';
 import DataTable from '../../components/dataTable';
 import { userService } from '../../../api/userService';
 import { useTranslation } from 'react-i18next';
 import '../../components/darkMode.css'
 import { useAppContext } from '../../../appContext';
 
-function AccessTab({ inventory, setInventory }) {
+function AccessTab({ inventory, setInventory, setSaved }) {
   const { t } = useTranslation();
   const [isPublic, setIsPublic] = useState(false);
   const [editors, setEditors] = useState([]);
@@ -18,7 +18,7 @@ function AccessTab({ inventory, setInventory }) {
   const searchTimeout = useRef(null);
   const { darkMode } = useAppContext();
 
-
+  // Initialize inventory state
   useEffect(() => {
     if (!inventory) return;
     setSelectAll(false);
@@ -34,6 +34,7 @@ function AccessTab({ inventory, setInventory }) {
     }
   }, [inventory]);
 
+  // Search users by email
   useEffect(() => {
     if (!emailInput.trim()) {
       setSearchResults([]);
@@ -48,50 +49,57 @@ function AccessTab({ inventory, setInventory }) {
       } catch (err) {
         console.error(err);
       }
-    }, 300); 
+    }, 300);
 
     return () => clearTimeout(searchTimeout.current);
   }, [emailInput]);
 
-  const handleAddEditor = (user) => {
-    if (!user) return;
-    if (editors.some(e => e.email === user.email)) return; 
+  // Helper to update inventory and mark as unsaved
+  const updateInventory = (updatedEditors, updatedIsPublic = isPublic) => {
+    const updatedInventory = {
+      ...inventory,
+      is_public: updatedIsPublic,
+      editors: updatedEditors.map(e => ({ name: e.name, email: e.email })),
+    };
+    setInventory(updatedInventory);
+    setSaved(false); // mark as unsaved
+  };
 
-    setEditors(prev => [...prev, { name: user.name, email: user.email, selected: false }]);
+  // Add a new editor
+  const handleAddEditor = (user) => {
+    if (!user || editors.some(e => e.email === user.email)) return;
+
+    const updatedEditors = [...editors, { name: user.name, email: user.email, selected: false }];
+    updateInventory(updatedEditors);
     setEmailInput('');
     setSearchResults([]);
   };
 
+  // Remove selected editors
   const handleRemoveSelected = () => {
-    setEditors(prev => prev.filter(editor => !editor.selected));
+    const updatedEditors = editors.filter(editor => !editor.selected);
+    updateInventory(updatedEditors);
     setSelectAll(false);
   };
 
+  // Selecting a row is purely UI, does NOT mark as unsaved
+  const handleSelectRow = (email) => {
+    setEditors(editors.map(editor =>
+      editor.email === email ? { ...editor, selected: !editor.selected } : editor
+    ));
+  };
+
+  // Toggle select all rows (purely UI)
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
     setEditors(editors.map(editor => ({ ...editor, selected: newSelectAll })));
   };
 
-  const handleSelectRow = (email) => {
-    setEditors(editors.map(editor => editor.email === email ? { ...editor, selected: !editor.selected } : editor));
-  };
-
-  const handleSave = () => {
-    const editorsWithoutSelected = editors.map(editor => ({ name: editor.name, email: editor.email }));
-    const updatedInventory = { ...inventory, is_public: isPublic, editors: editorsWithoutSelected };
-
-    try{
-      const inventoryId = updatedInventory.id;
-      console.log(updatedInventory.id) 
-      userService.addEditor(inventoryId);
-    }
-    catch{
-      console.log("error")
-    }
-
-    setInventory(updatedInventory);
-    console.log('Updated inventory:', updatedInventory);
+  // Toggle public/private inventory
+  const handleTogglePublic = () => {
+    updateInventory(editors, !isPublic);
+    setIsPublic(prev => !prev);
   };
 
   const columns = [
@@ -133,7 +141,7 @@ function AccessTab({ inventory, setInventory }) {
           type="switch"
           id="public-switch"
           checked={isPublic}
-          onChange={() => setIsPublic(prev => !prev)}
+          onChange={handleTogglePublic}
         />
       </div>
 
@@ -175,12 +183,6 @@ function AccessTab({ inventory, setInventory }) {
         onRowClick={(row) => console.log('Clicked:', row)}
         darkMode={darkMode}
       />
-
-      <div className="mt-3 text-end">
-        <Button variant="primary" onClick={handleSave}>
-          <FaSave className="me-2" /> {t('saveChanges')}
-        </Button>
-      </div>
     </div>
   );
 }

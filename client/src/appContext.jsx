@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { userService } from './api/userService';
 
 const AppContext = createContext();
 
@@ -17,6 +16,7 @@ export const AppProvider = ({ children }) => {
     return savedLang || "en";
   });
   const [user, setUser] = useState(null);
+
   useEffect(() => {
     document.body.className = darkMode ? "bg-dark text-white" : "bg-light text-dark";
     localStorage.setItem("darkMode", darkMode.toString());
@@ -26,14 +26,6 @@ export const AppProvider = ({ children }) => {
     i18n.changeLanguage(language);
     localStorage.setItem("language", language);
   }, [language, i18n]);
-  
-  useEffect(() => {
-    userService.getCurrentUser("/session-user") 
-      .then(res => {
-        if (res.data.success) setUser(res.data.user);
-      })
-      .catch(err => console.error(err));
-  }, []);
 
   const toggleTheme = () => setDarkMode((prev) => !prev);
   const toggleLanguage = () => setLanguage((prev) => (prev === "en" ? "lt" : "en"));

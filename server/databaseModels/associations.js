@@ -6,7 +6,7 @@ import Tag from "./tag.js";
 import CustomID from "./customID.js";
 
 User.hasMany(Inventory, { foreignKey: "user_id", onDelete: "CASCADE" });
-Inventory.belongsTo(User, { foreignKey: "user_id" });
+Inventory.belongsTo(User, { foreignKey: "user_id"});
 
 Inventory.hasMany(Item, { foreignKey: "inventory_id", as: "items", onDelete: "CASCADE" });
 Item.belongsTo(Inventory, { foreignKey: "inventory_id", onDelete: "CASCADE" });

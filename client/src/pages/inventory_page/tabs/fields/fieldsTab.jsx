@@ -13,7 +13,14 @@ import Form from 'react-bootstrap/Form';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../../../appContext';
 
-function FieldsTab({ inventory, setInventory }) {
+function FieldsTab({ inventory, setInventory, setSaved }) {
+  const FIELD_TOOLTIPS = {
+  line: "An input for a few words",
+  multiline: "An input for a longer text",
+  number: "Numeric input",
+  url: "URL input",
+  bool: "Checkbox input"
+};
   const [fields, setFields] = useState([]);
   const scrollContainerRef = useRef(null);
   const { t } = useTranslation();
@@ -41,43 +48,12 @@ function FieldsTab({ inventory, setInventory }) {
     setFields(loadedFields);
   }, [inventory]);
 
-  const moveField = (from, to) => {
-    const updated = [...fields];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(to, 0, moved);
-    setFields(updated);
-  };
-
-  const updateField = (index, newData) => {
-    const updated = [...fields];
-    updated[index] = newData;
-    setFields(updated);
-  };
-
-  const removeField = (index) => {
-    setFields(fields.filter((_, i) => i !== index));
-  };
-
-  const checkLength = (type) => fields.filter(f => f.type === type).length;
-
-  const addField = (type) => {
-    if (checkLength(type) < MAX_FIELDS) {
-      setFields([...fields, defaultNewField(type)]);
-    }
-  };
-
-  const handleSave = () => {
-    if (!inventory) return;
-
-    const payload = fields.map(f => ({
-      type: f.type,
-      title: f.title,
-      desc: f.desc,
-      showInTable: f.showInTable,
-    }));
+  const updateInventory = (updatedFields) => {
+    setFields(updatedFields);
 
     const updatedInventory = { ...inventory };
     const fieldTypes = ["line", "multiline", "number", "url", "bool"];
+
     fieldTypes.forEach(type => {
       for (let i = 1; i <= 3; i++) {
         updatedInventory[`custom_${type}${i}_name`] = null;
@@ -88,7 +64,7 @@ function FieldsTab({ inventory, setInventory }) {
     });
 
     const counters = { line: 1, multiline: 1, number: 1, url: 1, bool: 1 };
-    payload.forEach(f => {
+    updatedFields.forEach(f => {
       const type = f.type;
       const index = counters[type];
       updatedInventory[`custom_${type}${index}_name`] = f.title;
@@ -99,7 +75,32 @@ function FieldsTab({ inventory, setInventory }) {
     });
 
     setInventory(updatedInventory);
-    console.log("Updated inventory:", updatedInventory);
+    setSaved(false); 
+  };
+
+  const moveField = (from, to) => {
+    const updated = [...fields];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
+    updateInventory(updated);
+  };
+
+  const updateField = (index, newData) => {
+    const updated = [...fields];
+    updated[index] = newData;
+    updateInventory(updated);
+  };
+
+  const removeField = (index) => {
+    updateInventory(fields.filter((_, i) => i !== index));
+  };
+
+  const checkLength = (type) => fields.filter(f => f.type === type).length;
+
+  const addField = (type) => {
+    if (checkLength(type) < MAX_FIELDS) {
+      updateInventory([...fields, defaultNewField(type)]);
+    }
   };
 
   return (
@@ -107,7 +108,7 @@ function FieldsTab({ inventory, setInventory }) {
       <div className='p-2'>
         <h4 className={darkMode ? 'text-light' : ''}>{t('fieldsHeader')}</h4>
         <p className={darkMode ? 'text-light' : ''}>
-          {t('fieldsExplanation', {count: MAX_FIELDS})}
+          {t('fieldsExplanation', { count: MAX_FIELDS })}
         </p>
 
         <div className="d-flex flex-wrap gap-2 mb-3">
@@ -117,10 +118,10 @@ function FieldsTab({ inventory, setInventory }) {
               placement="top"
               overlay={
                 <Tooltip id={`tooltip${type}`}>
-                  {checkLength(type) >= MAX_FIELDS
-                    ? t('maxElements')
-                    : FIELD_TOOLTIPS[type]}
-                </Tooltip>
+                {checkLength(type) >= MAX_FIELDS
+                  ? t('maxElements')
+                  : t(FIELD_TOOLTIPS[type])}
+              </Tooltip>
               }
             >
               <Button
@@ -166,30 +167,20 @@ function FieldsTab({ inventory, setInventory }) {
         </div>
 
         <h5 className={`mt-4 ${darkMode ? 'text-light' : ''}`}>{t('previewFields')}</h5>
-        <Card
-          className={`p-3 ${darkMode ? 'textarea-dark text-white border-light' : ''}`}
-        >
+        <Card className={`p-3 ${darkMode ? 'textarea-dark text-white border-light' : ''}`}>
           {fields.length > 0 ? (
             fields.map((field, i) => (
               <Form.Group key={i} className="mb-3">
                 <Form.Label className={darkMode ? 'text-light fw-bold' : 'fw-bold'}>
                   {field.title || '[No title]'}
                 </Form.Label>
-                {renderFieldInput(field, i, fields, setFields, darkMode)}
+                {renderFieldInput(field, i, fields, updateInventory, darkMode)}
               </Form.Group>
-            ))
+          ))
           ) : (
-            <span className={darkMode ? 'text-light' : 'text-muted'}>
-              {t('noElements')}
-            </span>
+            <span className={darkMode ? 'text-light' : 'text-muted'}>{t('noElements')}</span>
           )}
         </Card>
-
-        <div className="mt-3 text-end">
-          <Button variant={darkMode ? 'outline-light' : 'success'} onClick={handleSave}>
-            {t('saveFields')}
-          </Button>
-        </div>
       </div>
     </DndProvider>
   );

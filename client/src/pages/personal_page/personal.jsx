@@ -1,8 +1,8 @@
 import SharedNavbar from '../components/navbar';
 import { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Button from 'react-bootstrap/Button';
 import { FaPlus, FaTrash } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
 import DataTable from '../components/dataTable'; 
 import { Container } from 'react-bootstrap';
 import { userService } from '../../api/userService';
@@ -10,7 +10,9 @@ import { useTranslation } from 'react-i18next';
 import { useAppContext  } from '../../appContext';
 
 function PersonalPage() {
-    const { darkMode } = useAppContext();
+    const location = useLocation();
+    const { userId, name } = location.state || {};
+    const { darkMode, user } = useAppContext();
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [inventories, setInventories] = useState([]);
@@ -18,41 +20,58 @@ function PersonalPage() {
     const [selectAll, setSelectAll] = useState(false);
     const [error, setError] = useState(location.state?.error?.message || "");
     const [success, setSuccess] = useState(location.state?.success?.message || "");
+    const isPersonal = user.id === userId;
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchInventories = async () => {
+
+            setError("");
             try {
-                const [personalRes, editableRes] = await Promise.all([
-                    userService.getUsersInventories(),
-                    userService.getEditableInventories()
-                ]);
-
-                const personalSimplified = personalRes.data.inventories.map(inv => ({
-                    ...inv,
-                    id: inv.id,
-                    name: inv.name,
-                    description: inv.description,
-                    publicity: inv.is_public ? "Public" : "Private",
-                    created: inv.createdAt,
-                    selected: false
-                }));
-                setInventories(personalSimplified);
-
-                const editableSimplified = editableRes.data.inventories.map(inv => ({
-                    name: inv.name,
-                    description: inv.description,
-                    publicity: inv.is_public ? "Public" : "Private",
-                    owner: inv.creatorEmail,
-                    created: inv.createdAt
-                }));
-                setEditableInventories(editableSimplified);
+               
+                try {
+                    const personalRes = await userService.getUsersInventories(userId);
+                    const personalSimplified = personalRes.data.inventories.map(inv => ({
+                        ...inv,
+                        id: inv.id,
+                        name: inv.name,
+                        description: inv.description,
+                        publicity: inv.is_public ? "Public" : "Private",
+                        created: inv.createdAt,
+                        selected: false
+                    }));
+                    setInventories(personalSimplified);
+                } catch (err) {
+                    console.error("Error fetching personal inventories:", err);
+                    setError("Failed to load personal inventories.");
+                }
+                
+                try {
+                    const editableRes = await userService.getEditableInventories(userId);
+                    console.log(editableRes)
+                    const editableSimplified = editableRes.data.inventories.map(inv => ({
+                        ...inv,
+                        id: inv.id,
+                        name: inv.name,
+                        description: inv.description,
+                        publicity: inv.is_public ? "Public" : "Private",
+                        owner: inv.creatorEmail,
+                        created: inv.createdAt
+                    }));
+                    setEditableInventories(editableSimplified);
+                } catch (err) {
+                    console.error("Error fetching editable inventories:", err);
+                    setError("Failed to load accessible inventories.");
+                }
 
             } catch (err) {
-                console.error("Error fetching inventories:", err);
+                console.error("Unexpected error fetching inventories:", err);
+                setError("Unexpected error occurred while fetching inventories.");
             }
         };
-        fetchData();
-    }, []);
+
+        fetchInventories();
+    }, [userId]);
+
 
     const handleCreateInventory = async () => {
         try {
@@ -140,10 +159,36 @@ function PersonalPage() {
 
 
     const accessColumns = [
-        { key: 'name', label: 'Name', sortable: true, render: (value) => <a style={{ textDecoration: 'none' }} href='/inventory'>{value}</a> },
+        { 
+            key: 'name',
+            label: 'Name',
+            sortable: true,
+            render: (value, row) => (
+            <span
+                style={{ cursor: 'pointer', color: '#0d6efd', }}
+                onClick={() => navigate('/inventory', { state: row.id })}
+            >
+                {value}
+            </span>
+        )
+        },
         { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
         { key: 'publicity', label: 'Publicity', sortable: true, className: 'd-none d-sm-table-cell' },
-        { key: 'owner', label: 'Owner', sortable: true, render: (value) => <a href='/personal'>{value}</a> },
+        { 
+            key: 'owner',
+            label: 'Owner',
+            sortable: true, 
+            render: (value, row) => (
+                console.log('Render value:', value, 'Row:', row),
+                <span
+                className="text-decoration-none d-none d-sm-table-cell"
+                style={{ cursor: 'pointer', color: 'blue' }}
+                onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.email } })}
+                >
+                {value}
+                </span>
+            ) 
+        },
         { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
     ];
 
@@ -161,8 +206,12 @@ function PersonalPage() {
                     {success}
                 </div>)}
 
-                <p className="fs-1">{t('yourInventories')}</p>
-                {error && (<div className="alert alert-danger" role="alert">{error}</div>)}
+                <p className="fs-1">
+                    {isPersonal
+                        ? t('yourInventories')
+                        : t('usersInventories', { name })}
+                </p>
+
                 <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
                     <Button variant="danger" onClick={handleDeleteSelected} title={t('deleteSelected')}>
                         <FaTrash color='white' />
@@ -175,7 +224,12 @@ function PersonalPage() {
             </div>
 
             <div>
-                <p className="fs-1">{t('yourAccessableInventories')}</p>
+                <p className="fs-1">
+                    {isPersonal
+                        ? t('yourAccessibleInventories')
+                        : t('userAccessibleInventories', { name })}
+                </p>
+
                 <DataTable data={editableInventories} columns={accessColumns} itemsPerPage={5} darkMode={darkMode}/>
             </div>
         </Container>

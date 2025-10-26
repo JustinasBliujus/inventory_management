@@ -15,7 +15,7 @@ import adminRoutes from './adminRoutes.js';
 import {createInventory, updateInventory, saveChat,
    deleteInventory, saveCustomID, addEditor, deleteItem, saveInventoryTags,
      getLastInventories, getMostPopularInventories,
-     getRandomTags, upsertItem
+     getRandomTags, upsertItem, getInventoriesByTag
     } from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
@@ -102,7 +102,7 @@ router.get('/isLoggedIn', requireLogin(), requireUnblocked(), (req, res) => {
   res.status(200).json({ user: req.session.user });
 });
 
-router.get('/getUsers', requireLogin(), requireUnblocked(), requireAdmin(), async (req, res) => {
+router.get('/getUsers', requireLogin(), requireUnblocked(), async (req, res) => {
   try {
     const users = await getUsers();
     res.json({ users });
@@ -121,6 +121,10 @@ router.post('/registerGoogle', async (req, res) => {
      }
 
      const user = await getUserByEmail(email);
+
+     if(user && user.status === 'blocked'){
+        return res.status(403).json({ status: "error", message: "User is blocked" });
+     }
 
      const result = await createUserGoogle(name, surname, email);
 
@@ -170,7 +174,7 @@ router.post('/register', async (req, res) => {
 
         return res.status(500).json({ 
             status: "error",
-            message: "Internal server error" 
+            message: err.code 
         });
     }
 });
@@ -224,18 +228,18 @@ router.post('/createInventory', requireLogin(), requireUnblocked(), async (req, 
 });
 
 router.get("/getInventory/:id", requireLogin(), async (req, res) => {
+  
   const { id } = req.params;
-  const userId = req.session.user.id;
-
-  const result = await getInventoryById(userId, id);
+  console.log(id, " IN ROUTER GET INVENTORY")
+  const result = await getInventoryById(id);
 
   if (!result.success) return res.status(404).json(result);
 
   res.json(result.inventory.dataValues);
 });
 
-router.get("/getUsersInventories", requireLogin(), async (req, res) => {
-  const userId = req.session.user.id;
+router.get("/getUsersInventories/:userId", requireLogin(), async (req, res) => {
+  const { userId } = req.params;
 
   const result = await getUserInventories(userId);
 
@@ -268,11 +272,12 @@ router.post("/saveChat", requireLogin(), async (req, res) => {
   }
 });
 
-router.get("/getEditableInventories", requireLogin(), async (req, res) => {
+router.get("/getEditableInventories/:userId", requireLogin(), async (req, res) => {
   try {
-    const userId = req.session.user.id;
+    const { userId } = req.params;
+    
     const result = await getEditableInventories(userId);
-
+    console.log(result, " IN GET EDITABLE ROUTER")
     if (!result.success) {
       return res.status(500).json(result);
     }
@@ -337,14 +342,19 @@ router.post("/search", async (req, res) => {
 });
 
 router.post('/addEditor', requireLogin(), async (req, res) => {
-
-  const userId = req.session.user.id;
-  const inventoryId = BigInt(req.body.data);
-
   try {
-    const result = await addEditor(inventoryId, userId);
+    const { editors, inventoryId } = req.body;
+    if (!inventoryId || !Array.isArray(editors)) {
+      return res.status(400).json({ error: 'Invalid payload' });
+    }
+
+    const editorEmails = editors.map(editor => editor.email);
+
+    const result = await addEditor(editorEmails, inventoryId);
+
     res.status(200).json(result);
   } catch (error) {
+    console.error(error);
     res.status(400).json({ error: error.message });
   }
 });
@@ -352,12 +362,12 @@ router.post('/addEditor', requireLogin(), async (req, res) => {
 router.post('/addItem', requireLogin(), async (req, res) => {
   console.log("in router hit")
   const { itemData, item_id } = req.body;
-
-  console.log("in router "+itemData)
+  const creator_email = req.session.user.email;
+  console.log("in router "+JSON.stringify(itemData,null,2))
   console.log("in router "+item_id)
   try {
    
-    const result = await upsertItem(itemData, item_id);
+    const result = await upsertItem(itemData, item_id, creator_email);
 
     if (result.success) {
       res.status(200).json(result.item);
@@ -407,10 +417,26 @@ router.get('/inventories/popular', async (req, res) => {
   const result = await getMostPopularInventories(10);
   res.json(result);
 });
-export default router;
 
 router.get('/random', async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const result = await getRandomTags(limit);
   res.json(result);
 });
+
+router.get('/inventoriesByTag', async (req, res) => {
+  try {
+    const tagId = req.query.tagId; 
+    if (!tagId) return res.status(400).json({ success: false, message: 'tagId is required' });
+
+    const inventories = await getInventoriesByTag(tagId);
+
+    res.json({ success: true, inventories });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+
+export default router;

@@ -8,52 +8,61 @@ import { ELEMENT_TYPES, MAX_ELEMENTS, ELEMENT_TOOLTIPS } from '../constants';
 import { createNewElement, renderValue } from './components/elementUtils';
 import DraggableElement from './components/draggableElement';
 import Tooltip from 'react-bootstrap/Tooltip';
-import { userService } from '../../../../api/userService';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../../../appContext';
 import '../../../components/darkMode.css'
 
-function IdBuilderTab({ inventory, setInventory }) {
+function IdBuilderTab({ inventory, setInventory, setSaved }) {
   const { t } = useTranslation();
   const { darkMode } = useAppContext();
 
   const [elements, setElements] = useState([]);
   const scrollContainerRef = useRef(null);
 
-  const moveElement = (from, to) => {
-    const updated = [...elements];
-    const [moved] = updated.splice(from, 1);
-    updated.splice(to, 0, moved);
-    setElements(updated);
-  };
-
+  // Initialize elements from inventory.customID
   useEffect(() => {
-    console.log(inventory)
     if (!inventory?.customID) return;
 
     const newElements = [];
-
     for (let i = 0; i < 10; i++) {
       const type = inventory.customID[`part_${i + 1}_type`];
       const format = inventory.customID[`part_${i + 1}_format`];
       const value = inventory.customID[`part_${i + 1}_value`];
 
-      if (type) {
-        newElements.push({ type, format, value });
-      } else {
-        newElements.push(null); 
-      }
+      if (type) newElements.push({ type, format, value });
     }
-    const filteredElements = newElements.filter(el => el !== null);
-
-    setElements(filteredElements);
+    setElements(newElements);
   }, [inventory]);
 
+  // Update inventory state and mark unsaved
+  const updateInventory = (updatedElements) => {
+    setElements(updatedElements);
 
-    const updateElement = (index, key, value) => {
+    const updatedInventory = { ...inventory };
+    if (!updatedInventory.customID) updatedInventory.customID = {};
+    updatedInventory.customID.inventory_id = updatedInventory.id;
+
+    for (let i = 0; i < 10; i++) {
+      const el = updatedElements[i];
+      updatedInventory.customID[`part_${i + 1}_type`] = el ? el.type : null;
+      updatedInventory.customID[`part_${i + 1}_format`] = el ? el.format : null;
+      updatedInventory.customID[`part_${i + 1}_value`] = el ? el.value : null;
+    }
+
+    setInventory(updatedInventory);
+    setSaved(false); // mark as unsaved
+  };
+
+  const moveElement = (from, to) => {
+    const updated = [...elements];
+    const [moved] = updated.splice(from, 1);
+    updated.splice(to, 0, moved);
+    updateInventory(updated);
+  };
+
+  const updateElement = (index, key, value) => {
     const updated = [...elements];
     const el = { ...updated[index] };
-
     el[key] = value;
 
     if (key === 'format' || key === 'type') {
@@ -61,48 +70,23 @@ function IdBuilderTab({ inventory, setInventory }) {
     }
 
     updated[index] = el;
-    setElements(updated);
+    updateInventory(updated);
   };
 
-
   const removeElement = (index) => {
-    setElements(elements.filter((_, i) => i !== index));
+    updateInventory(elements.filter((_, i) => i !== index));
   };
 
   const addElement = (type) => {
-    setElements([...elements, createNewElement(type)]);
+    updateInventory([...elements, createNewElement(type)]);
   };
-
-const handleSave = async () => {
-  if (!inventory) return;
-
-  const updatedInventory = { ...inventory };
-
-  if (!updatedInventory.customID) updatedInventory.customID = {};
-  updatedInventory.customID.inventory_id = updatedInventory.id;
-
-  for (let i = 0; i < 10; i++) {
-    const el = elements[i];
-    updatedInventory.customID[`part_${i + 1}_type`] = el ? el.type : null;
-    updatedInventory.customID[`part_${i + 1}_format`] = el ? el.format : null;
-    updatedInventory.customID[`part_${i + 1}_value`] = el ? el.value : null;
-  }
-  try {
-    const response = await userService.saveCustomID(updatedInventory.customID);
-    console.log(response.data);
-  } catch (err) {
-    console.error(err);
-  }
-  setInventory(updatedInventory);
-};
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className='p-2'>
         <h4>{t('idBuilder')}</h4>
-        <p>
-          {t('idBuilderExplanation', {count: MAX_ELEMENTS})}
-        </p>
+        <p>{t('idBuilderExplanation', { count: MAX_ELEMENTS })}</p>
+
         <div className="d-flex flex-wrap gap-2 mb-3">
           {ELEMENT_TYPES.map((t) => (
             <OverlayTrigger
@@ -116,36 +100,28 @@ const handleSave = async () => {
                 </Tooltip>
               }
             >
-                <Button
-                  variant={darkMode ? 'outline-light' : 'outline-primary'}
-                  size="sm"
-                  disabled={elements.length >= MAX_ELEMENTS}
-                  onClick={() =>
-                    elements.length < MAX_ELEMENTS && addElement(t)
-                  }
-                  style={{ pointerEvents: 'auto' }} 
-                >
-                  + {t}
-                </Button>
+              <Button
+                variant={darkMode ? 'outline-light' : 'outline-primary'}
+                size="sm"
+                disabled={elements.length >= MAX_ELEMENTS}
+                onClick={() => elements.length < MAX_ELEMENTS && addElement(t)}
+              >
+                + {t}
+              </Button>
             </OverlayTrigger>
           ))}
         </div>
-        <Button variant="success" onClick={handleSave}>
-            {t('saveId')}
-        </Button>
+
         <h5 className="mt-3">{t('previewId')}</h5>
         <Card className={`p-2 mb-3 ${darkMode ? 'textarea-dark' : ''}`}>
-          {elements.length > 0 ? (
-            elements.map(el => el.value).join('-')
-          ) : (
-            <span className="text-muted">{t('noId')}</span>
-          )}
+          {elements.length > 0
+            ? elements.map(el => el.value).join('-')
+            : <span className="text-muted">{t('noId')}</span>}
         </Card>
 
         {elements.length === 0 && <p className="text-muted">{t('noElements')}</p>}
 
         <div
-      
           ref={scrollContainerRef}
           style={{
             maxHeight: '40vh',

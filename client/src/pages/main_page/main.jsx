@@ -24,12 +24,19 @@ function MainPage() {
       minSize={12}
       maxSize={35}
       tags={tags}
-      onClick={tag => alert(`'${tag.value}' was selected!`)}
+      onClick={handleTagClick}
       className='d-none d-md-block w-75'
       style ={{ cursor: "pointer" }}
     />
   </div>
 )
+  const handleTagClick = async (tag) => {
+    console.log('Tag clicked:', tag.value);
+
+    const { data } = await userService.getInventoriesByTag(tag.id); 
+    console.log('Inventories:', data.inventories);
+    navigate('/search', { state: { inventories: data.inventories } });
+  };
 
   useEffect(() => {
           const fetchData = async () => {
@@ -38,6 +45,7 @@ function MainPage() {
                   const latest = result.data.inventories.map(inv => ({
                       ...inv,
                       id: inv.id,
+                      user_id: inv.user_id,
                       name: inv.name,
                       category: inv.category,
                       description: inv.description,
@@ -55,6 +63,7 @@ function MainPage() {
                   const popular = result.data.inventories.map(inv => ({
                       ...inv,
                       id_pop: inv.id,
+                      user_id: inv.user_id,
                       name_pop: inv.name,
                       category_pop: inv.category,
                       description_pop: inv.description,
@@ -71,6 +80,7 @@ function MainPage() {
                   const result = await userService.getRandomTags();
                   
                   const tagNames = result.data.tags.map(tag => ({
+                      id: tag.id,
                       value: tag.name,
                       count: Math.floor(Math.random() * 30) + 1
                   }));
@@ -95,7 +105,22 @@ function MainPage() {
     },
     { key: 'category', label: 'Category', sortable: true, render: (value) => value || '-' },
     { key: 'description', label: 'Description', sortable: true, render: (value) => value || '-' },
-    { key: 'creator', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> },
+    { 
+      key: 'creator',
+      label: 'Creator',
+      sortable: true, 
+      className: 'd-none d-sm-table-cell', 
+      render: (value, row) => (
+        console.log('Render value:', value, 'Row:', row),
+        <span
+          className="text-decoration-none d-none d-sm-table-cell"
+          style={{ cursor: 'pointer', color: 'blue' }}
+          onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.user.name } })}
+        >
+          {value}
+        </span>
+      ) 
+    },
     { key: 'created', label: 'Created At', sortable: true, render: (value) => value || '-' },
   ];
 
@@ -113,7 +138,21 @@ function MainPage() {
     { key: 'category_pop', label: 'Category', sortable: true, render: (value) => value || '-' },
     { key: 'description_pop', label: 'Description', sortable: true, render: (value) => value || '-' },
     { key: 'itemCount_pop', label: 'Item count', sortable: true },
-    { key: 'creator_pop', label: 'Creator', sortable: true, className: 'd-none d-sm-table-cell', render: (value) => <a href="/" className="text-decoration-none d-none d-sm-table-cell">{value}</a> },
+    { 
+      key: 'creator_pop', 
+      label: 'Creator', 
+      sortable: true, 
+      className: 'd-none d-sm-table-cell', 
+      render: (value, row) => (
+        <span
+          className="text-decoration-none d-none d-sm-table-cell"
+          style={{ cursor: 'pointer', color: 'blue' }}
+          onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.user.name } })}
+        >
+          {value}
+        </span>
+      )  
+    },
   ];
 
   return (

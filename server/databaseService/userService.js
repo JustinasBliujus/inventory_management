@@ -5,7 +5,7 @@ import { Op } from "sequelize";
 // Get all users, ordered by last login
 export async function getUsers() {
   return await User.findAll({
-    attributes: ['name','surname','email','status','is_admin','last_login'],
+    attributes: ['id','name','surname','email','status','is_admin','last_login'],
     order: [['last_login', 'DESC']]
   });
 }
@@ -102,16 +102,28 @@ export async function createUser( name, surname, password, email, verification_t
   return user;
 }
 
-// Create a Google user
 export async function createUserGoogle(name, surname, email) {
-  const user = await User.create({
-    name,
-    surname,
-    email,
-    google: true,
-    status: 'verified',
-    prev_status: 'verified'
+  const [user, created] = await User.findOrCreate({
+    where: { email },
+    defaults: {
+      name,
+      surname,
+      email,
+      google: true,
+      status: 'verified',
+      prev_status: 'verified'
+    }
   });
+
+  if (!created) {
+    user.name = name || user.name;
+    user.surname = surname || user.surname;
+    user.google = true;
+    user.prev_status = 'verified';
+    user.status = 'verified';
+    await user.save();
+  }
+
   return user;
 }
 
@@ -120,7 +132,7 @@ export async function getUserInventories(userId) {
     const inventories = await Inventory.findAll({
       where: { user_id: userId },
     });
-    if (!inventories || inventories.length === 0) {
+    if (!inventories) {
       return { success: false, message: "No inventories found" };
     }
 
@@ -145,7 +157,7 @@ export async function getEditableInventories(userId) {
         {
           model: User,
           as: undefined, 
-          attributes: ['email'], 
+          attributes: ['email','name'], 
         }
       ]
     });
@@ -153,6 +165,7 @@ export async function getEditableInventories(userId) {
     const inventoriesWithCreatorEmail = editableInventories.map(inv => ({
       id: inv.id,
       name: inv.name,
+      user_id: inv.user_id,
       description: inv.description,
       is_public: inv.is_public,
       creatorEmail: inv.user?.email,
