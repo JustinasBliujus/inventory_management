@@ -84,6 +84,9 @@ const resources = {
       "tagsInformation": "Tags - max {{count}}",
       "tagsPlaceholder": "Enter a tag (letters only, max. {{count}})",
       "myPage":"My page",
+      "noTagsAvailable":"No tags available",
+      "noFieldsFound": "You have to define fields first",
+      "noWriteAccess": "You do not have write access",
     }
   },
   lt: {
@@ -168,6 +171,9 @@ const resources = {
       "tagsInformation": "Žymos - maks {{count}}",
       "tagsPlaceholder": "Įveskite žymą (tik raidėmis, maks. {{count}})",
       "myPage":"My puslapis",
+      "noTagsAvailable":"Nėra prieinamų žymų",
+      "noFieldsFounds": "Pirmiausia turite apibrėžti laukus",
+      "noWriteAccess": "Jūs neturite reikiamos prieigos",
     }
   }
 };

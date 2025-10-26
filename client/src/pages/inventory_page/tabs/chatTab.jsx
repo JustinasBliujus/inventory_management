@@ -11,11 +11,14 @@ import '../../components/darkMode.css'
 
 function ChatTab({ inventory, setInventory }) {
     const { t } = useTranslation();
-    const { darkMode } = useAppContext();
+    const { darkMode, user } = useAppContext();
 
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState("");
-    
+    const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
+    const isAdmin = user?.role === 'admin';
+    const hasWriteAccess = isOwner || isAdmin || inventory?.is_public || inventory?.editors?.includes(user?.id);
+
     useEffect(() => {
         if (inventory?.chats) {
             const mappedPosts = inventory.chats.map(chat => ({
@@ -114,9 +117,10 @@ function ChatTab({ inventory, setInventory }) {
             <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-2" style={{ position: 'relative' }}>
                     <Form.Control
+                        disabled={!hasWriteAccess}
                         as="textarea"
                         rows={3}
-                        placeholder={t('writePost')}
+                        placeholder={!hasWriteAccess ? t('noWriteAccess') : t('writePost')}
                         value={newPost}
                         onChange={e => setNewPost(e.target.value)}
                         className={darkMode ? 'textarea-dark' : ''}
@@ -137,7 +141,12 @@ function ChatTab({ inventory, setInventory }) {
                         </Button>
                     </OverlayTrigger>
                 </Form.Group>
-                <Button type="submit" variant="primary">{t('post')}</Button>
+                <Button 
+                    type="submit"
+                    disabled={!hasWriteAccess}
+                    title={!hasWriteAccess && t('noWriteAccess')} 
+                    variant="primary"
+                >{t('post')}</Button>
             </Form>
         </div>
     );

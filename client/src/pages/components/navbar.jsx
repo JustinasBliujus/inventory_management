@@ -51,7 +51,7 @@ function SharedNavbar({ onSearch }) {
 
             {/* User Info */}
             <div title="Admin" className="d-flex align-items-center gap-2 d-none d-lg-flex" style={{cursor: "pointer"}} onClick={() => navigate('/personal')}>
-              <span className="fw-medium">{user.name ? user.name : ""}</span>
+              <span className="fw-medium">{user?.name || ""}</span>
             </div>
 
             <Button

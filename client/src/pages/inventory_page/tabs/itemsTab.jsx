@@ -6,9 +6,10 @@ import { userService } from '../../../api/userService';
 import { FaTrash, FaPlus } from 'react-icons/fa';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../../appContext';
+import { Link } from 'react-router-dom';
 
 function InventoryItems({ inventory }) {
-  const { darkMode } = useAppContext();
+  const { darkMode, user } = useAppContext();
 
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -16,7 +17,9 @@ function InventoryItems({ inventory }) {
   const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
+  const isAdmin = user?.role === 'admin';
+  const hasWriteAccess = isOwner || isAdmin || inventory?.is_public || inventory?.editors?.includes(user?.id);
 
   useEffect(() => {
     if (inventory?.items) {
@@ -51,7 +54,6 @@ function InventoryItems({ inventory }) {
     }
 
     try {
-      setLoading(true);
       setError(null);
       await Promise.all(
         selectedItems.map(item =>
@@ -65,8 +67,6 @@ function InventoryItems({ inventory }) {
     } catch (err) {
       setError(err.response?.data?.message || "Failed to delete items.");
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -100,7 +100,33 @@ function InventoryItems({ inventory }) {
       label: <Form.Check type="checkbox" checked={selectAll} onChange={handleSelectAll} />,
       render: (_, row) => <Form.Check type="checkbox" checked={row.selected} onChange={() => handleSelectRow(row.id)} />
     },
-    { key: 'creator_email', label: 'Creator Email', sortable: true },
+    { 
+      key: 'id', 
+      label: 'Item ID', 
+      sortable: true,
+      render: (value, row) => (
+        <Link
+          to="/item"
+          state={{ item_id: row.id, inventory: inventory }}
+          className="text-decoration-none"
+        >
+          {value}
+        </Link>
+      ) },
+    {
+      key: 'creator_email',
+      label: 'Creator Email',
+      sortable: true,
+      render: (value, row) => (
+        <Link
+          to="/personal"
+          state={{ userId: row.creator_id }}
+          className="text-decoration-none"
+        >
+          {value}
+        </Link>
+      )
+    },
     ...customColumns,
     { key: 'createdAt', label: 'Created At', sortable: true, render: (value) => new Date(value).toLocaleString() },
     { key: 'updatedAt', label: 'Updated At', sortable: true, render: (value) => new Date(value).toLocaleString() },
@@ -117,13 +143,14 @@ function InventoryItems({ inventory }) {
         <Button
           variant="danger"
           onClick={handleDeleteItems}
-          disabled={loading}
-          title={t('deleteSelected')}
+          disabled={!hasWriteAccess}
+          title={hasWriteAccess ? t('deleteSelected') : t('noWriteAccess')}
         >
           <FaTrash color='white' />
         </Button>
         <Button
-          title={t('addNewItem')}
+          disabled={!hasWriteAccess}
+          title={hasWriteAccess ? t('addNewItem') : t('noWriteAccess')}
           variant="success"
           onClick={() => navigate('/addItem', { state: { inventory } })}
         >

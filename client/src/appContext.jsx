@@ -56,5 +56,4 @@ export const AppProvider = ({ children }) => {
   );
 };
 
-// --- Custom Hook ---
 export const useAppContext = () => useContext(AppContext);

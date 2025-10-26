@@ -19,7 +19,6 @@ function FieldsTab({ inventory, setInventory }) {
   const { t } = useTranslation();
   const { darkMode } = useAppContext();
 
-
   useEffect(() => {
     if (!inventory) return;
 

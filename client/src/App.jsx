@@ -62,7 +62,7 @@ function App() {
           }
         />
         <Route
-          path="/items"
+          path="/item"
           element={
             <PrivateRoute>
               <ItemsPage />

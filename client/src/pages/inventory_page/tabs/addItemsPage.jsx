@@ -5,20 +5,33 @@ import Button from 'react-bootstrap/Button';
 import { Container } from 'react-bootstrap';
 import { userService } from '../../../api/userService';
 import SharedNavbar from '../../components/navbar';
-import '../../components/darkMode.css'
+import '../../components/darkMode.css';
 import { useAppContext } from '../../../appContext';
 
 function AddItemsPage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { inventory } = location.state || {};
+  const { inventory, mapping, item_id } = location.state || {};
   const { darkMode } = useAppContext();
-  const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
 
   if (!inventory) return <p>No inventory selected</p>;
-
+  console.log(item_id+" IN AD ITEMS")
   const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
+
+  const initialValues = {};
+  customTypes.forEach(type => {
+    for (let i = 1; i <= 3; i++) {
+      const stateKey = `custom_${type}${i}_state`;
+      const key = `${type}${i}`;
+      const mappingEntry = mapping?.find(m => m.stateKey === stateKey);
+      if (mappingEntry) {
+        initialValues[key] = mappingEntry.value;
+      }
+    }
+  });
+
+  const [formValues, setFormValues] = useState(initialValues);
 
   const formFields = [];
   for (let type of customTypes) {
@@ -44,117 +57,123 @@ function AddItemsPage() {
   const handleChange = (key, value) => {
     setFormValues(prev => ({ ...prev, [key]: value }));
   };
- 
+
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const itemData = {};
+    try {
+      const itemData = {};
 
-    Object.entries(formValues).forEach(([key, value]) => {
-      if (key.startsWith('line')) itemData[`custom_${key}`] = value;
-      else if (key.startsWith('multiline')) itemData[`custom_${key}`] = value;
-      else if (key.startsWith('number')) itemData[`custom_${key}`] = value;
-      else if (key.startsWith('url')) itemData[`custom_${key}`] = value;
-      else if (key.startsWith('bool')) itemData[`custom_${key}`] = value;
-    });
+      Object.entries(formValues).forEach(([key, value]) => {
+        itemData[`custom_${key}`] = value;
+      });
 
-    itemData.inventory_id = inventory.id;
+      itemData.inventory_id = inventory.id;
+      console.log(item_id+" BEFORE SENDING")
+      const response = await userService.addItem( {itemData, item_id} );
 
-    const response = await userService.addItem(inventory.id, itemData);
-
-    console.log('Item added successfully:', response.data);
-    navigate(-1);
-  } catch (error) {
-    console.error('Error adding item:', error.response?.data || error.message);
-  } finally {
-    setLoading(false);
-  }
-};
-
+      console.log('Item added successfully:', response.data);
+      navigate(-1);
+    } catch (error) {
+      console.error('Error adding item:', error.response?.data || error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div>
-      <SharedNavbar></SharedNavbar>
-    <Container className='p-5 mt-2'>
-      <h2 className='text-center mb-4'>Add New Item to Inventory: {inventory.name}</h2>
-      <Form onSubmit={handleSubmit}>
-        {formFields.map(field => {
-          if (!field.show) return null;
+      <SharedNavbar />
+      <Container className="p-5 mt-2">
+        {formFields.length === 0 ? (
+          <p>No custom fields defined for this inventory.</p>
+        ) : (
+          <div>
+            <h2 className="text-center mb-4">
+              Add New Item to Inventory: {inventory.name}
+            </h2>
+            <Form onSubmit={handleSubmit}>
+              {formFields.map(field => {
+                if (!field.show) return null;
 
-          let inputElement = null;
+                let inputElement = null;
+                const value = formValues[field.key] ?? '';
 
-          switch (field.type) {
-            case 'line':
-              inputElement = (
-                <Form.Control
-                  className={darkMode ? 'textarea-dark' : ''}
-                  type="text"
-                  value={formValues[field.key] || ''}
-                  onChange={e => handleChange(field.key, e.target.value)}
-                />
-              );
-              break;
-            case 'multiline':
-              inputElement = (
-                <Form.Control
-                  className={darkMode ? 'textarea-dark' : ''}
-                  as="textarea"
-                  rows={3}
-                  value={formValues[field.key] || ''}
-                  onChange={e => handleChange(field.key, e.target.value)}
-                />
-              );
-              break;
-            case 'number':
-              inputElement = (
-                <Form.Control
-                  className={darkMode ? 'textarea-dark' : ''}
-                  type="number"
-                  value={formValues[field.key] || ''}
-                  onChange={e => handleChange(field.key, e.target.value)}
-                />
-              );
-              break;
-            case 'url':
-              inputElement = (
-                <Form.Control
-                  className={darkMode ? 'textarea-dark' : ''}
-                  type="url"
-                  value={formValues[field.key] || ''}
-                  onChange={e => handleChange(field.key, e.target.value)}
-                />
-              );
-              break;
-            case 'bool':
-              inputElement = (
-                <Form.Check
-                  type="checkbox"
-                  label=""
-                  checked={formValues[field.key] || false}
-                  onChange={e => handleChange(field.key, e.target.checked)}
-                />
-              );
-              break;
-            default:
-              inputElement = null;
-          }
+                switch (field.type) {
+                  case 'line':
+                    inputElement = (
+                      <Form.Control
+                        className={darkMode ? 'textarea-dark' : ''}
+                        type="text"
+                        value={value}
+                        onChange={e => handleChange(field.key, e.target.value)}
+                      />
+                    );
+                    break;
+                  case 'multiline':
+                    inputElement = (
+                      <Form.Control
+                        className={darkMode ? 'textarea-dark' : ''}
+                        as="textarea"
+                        rows={3}
+                        value={value}
+                        onChange={e => handleChange(field.key, e.target.value)}
+                      />
+                    );
+                    break;
+                  case 'number':
+                    inputElement = (
+                      <Form.Control
+                        className={darkMode ? 'textarea-dark' : ''}
+                        type="number"
+                        value={value}
+                        onChange={e => handleChange(field.key, e.target.value)}
+                      />
+                    );
+                    break;
+                  case 'url':
+                    inputElement = (
+                      <Form.Control
+                        className={darkMode ? 'textarea-dark' : ''}
+                        type="url"
+                        value={value}
+                        onChange={e => handleChange(field.key, e.target.value)}
+                      />
+                    );
+                    break;
+                  case 'bool':
+                    inputElement = (
+                      <Form.Check
+                        type="checkbox"
+                        label=""
+                        checked={!!formValues[field.key]}
+                        onChange={e => handleChange(field.key, e.target.checked)}
+                      />
+                    );
+                    break;
+                  default:
+                    inputElement = null;
+                }
 
-          return (
-            <Form.Group key={field.key} className="mb-3">
-              <Form.Label>{field.name}</Form.Label>
-              {inputElement}
-              {field.desc && <Form.Text className="text-muted">{field.desc}</Form.Text>}
-            </Form.Group>
-          );
-        })}
+                return (
+                  <Form.Group key={field.key} className="mb-3">
+                    <Form.Label>{field.name}</Form.Label>
+                    {inputElement}
+                    {field.desc && (
+                      <Form.Text className="text-muted">{field.desc}</Form.Text>
+                    )}
+                  </Form.Group>
+                );
+              })}
 
-        <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? 'Saving...' : 'Save Item'}
-        </Button>
-      </Form>
-    </Container>
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? 'Saving...' : 'Save Item'}
+              </Button>
+            </Form>
+          </div>
+        )}
+      </Container>
     </div>
   );
 }

@@ -121,7 +121,9 @@ function MainPage() {
       <SharedNavbar />
       <Container className="mt-5 p-5">
         <p className="fs-1 d-none d-md-block">{t('chooseTopic')}</p>
-        <SimpleCloud></SimpleCloud>
+        {
+          tags.length > 0 ? <SimpleCloud /> : <p>{t('noTagsAvailable')}</p>
+        }
         <p className="fs-1 d-none d-md-block">{t('latestInventories')}</p>
         <DataTable data={latestInventories} columns={latestColumns} itemsPerPage={5} darkMode={darkMode}/>
         <p className="fs-1 d-none d-md-block">{t('mostPopularInventories')}</p>

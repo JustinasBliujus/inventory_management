@@ -17,7 +17,7 @@ import { useAppContext } from '../../appContext';
 import { Container } from 'react-bootstrap';
 
 function InventoryPage() {
-    const { darkMode } = useAppContext();
+    const { darkMode, user } = useAppContext();
 
     const { t } = useTranslation();
     const [isMobile, setIsMobile] = useState(false);
@@ -25,10 +25,11 @@ function InventoryPage() {
     const location = useLocation();
     const inventoryId = location.state;
     const [inventory, setInventory] = useState(null);
+    const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
 
     const handleSave = async () => {
         if (!inventory) return;
-
+       
         const customFields = Object.fromEntries(
             Object.entries(inventory).filter(([key]) => key.startsWith("custom_"))
         );
@@ -43,7 +44,7 @@ function InventoryPage() {
         };
 
         const result = await userService.saveInventory(payload);
-        console.log("Inventory saved:", result.data);
+      
         };
 
 
@@ -84,11 +85,11 @@ function InventoryPage() {
                         <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect} className={`justify-content-around mb-3 ${darkMode ? 'nav-tabs-dark' : ''}`}>
                             <Nav.Item><Nav.Link eventKey="items"><FaBox size={15} /></Nav.Link></Nav.Item>
                             <Nav.Item><Nav.Link eventKey="chat"><FaComments size={15} /></Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="settings"><FaCog size={15} /></Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="customId"><FaIdCard size={15} /></Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="fields"><FaListAlt size={15} /></Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="access"><FaUsers size={15} /></Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="stats"><FaChartBar size={15} /></Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="settings" disabled={!isOwner}><FaCog size={15} /></Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="customId" disabled={!isOwner}><FaIdCard size={15} /></Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="fields" disabled={!isOwner}><FaListAlt size={15} /></Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="access" disabled={!isOwner}><FaUsers size={15} /></Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="stats" disabled={!isOwner}><FaChartBar size={15} /></Nav.Link></Nav.Item>
                         </Nav>
                     </div>
                 )}
@@ -99,11 +100,11 @@ function InventoryPage() {
                         <Nav variant="tabs" activeKey={activeTab} onSelect={handleSelect} className={`justify-content-around mb-3 ${darkMode ? 'nav-tabs-dark' : ''}`}>
                             <Nav.Item><Nav.Link eventKey="items">{t('items')}</Nav.Link></Nav.Item>
                             <Nav.Item><Nav.Link eventKey="chat">{t('chat')}</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="settings">{t('settings')}</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="customId">{t('customId')}</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="fields">{t('fields')}</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="access">{t('access')}</Nav.Link></Nav.Item>
-                            <Nav.Item><Nav.Link eventKey="stats">{t('stats')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="settings" disabled={!isOwner}>{t('settings')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="customId" disabled={!isOwner}>{t('customId')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="fields" disabled={!isOwner}>{t('fields')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="access" disabled={!isOwner}>{t('access')}</Nav.Link></Nav.Item>
+                            <Nav.Item><Nav.Link eventKey="stats" disabled={!isOwner}>{t('stats')}</Nav.Link></Nav.Item>
                         </Nav>
                     </div>
                 )}

@@ -155,30 +155,41 @@ export async function addEditor(inventoryId, userId) {
   }
 }
 
-export async function addItem(inventoryId, creatorEmail, itemData = {}) {
+export async function upsertItem(itemData, item_id) {
   try {
-    const inventory = await Inventory.findByPk(inventoryId);
+    const inventory = await Inventory.findByPk(itemData.inventory_id);
     if (!inventory) {
       throw new Error("Inventory not found");
     }
-
-    const user = await User.findOne({ where: { email: creatorEmail } });
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    const item = await Item.create({
-      inventory_id: inventoryId,
-      creator_email: creatorEmail,
-      ...itemData
+    console.log(item_id)
+    let item = await Item.findOne({
+      where: { inventory_id: itemData.inventory_id, id: item_id },
     });
 
-    return { success: true, item };
+    if (item) {
+   
+      await item.update(itemData);
+      console.log(`Item ${item_id} updated successfully.`);
+    } else {
+    
+      item = await Item.create({
+        ...itemData,
+        item_id: item_id,
+        inventory_id: itemData.inventory_id,
+      });
+      console.log(`Item ${item_id} created successfully.`);
+    }
+
+    return item;
+
   } catch (error) {
-    console.error("Error adding item:", error);
-    return { success: false, error: error.message };
+    console.error("Error upserting item:", error);
+    throw error;
   }
 }
+
+
+
 export async function deleteItem(item_id, inv_id, user_id) {
   try {
     const inventory = await Inventory.findOne({

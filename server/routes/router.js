@@ -13,10 +13,9 @@ import dotenv from 'dotenv';
 import { requireLogin, requireAdmin, requireUnblocked } from './middlewares.js';
 import adminRoutes from './adminRoutes.js';
 import {createInventory, updateInventory, saveChat,
-   deleteInventory, saveCustomID, addEditor,
-    addItem, deleteItem, saveInventoryTags,
+   deleteInventory, saveCustomID, addEditor, deleteItem, saveInventoryTags,
      getLastInventories, getMostPopularInventories,
-     getRandomTags
+     getRandomTags, upsertItem
     } from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
@@ -351,10 +350,15 @@ router.post('/addEditor', requireLogin(), async (req, res) => {
 });
 
 router.post('/addItem', requireLogin(), async (req, res) => {
-  const { inventoryId, itemData } = req.body;
-  const creatorEmail = req.session.user.email;
+  console.log("in router hit")
+  const { itemData, item_id } = req.body;
+
+  console.log("in router "+itemData)
+  console.log("in router "+item_id)
   try {
-    const result = await addItem(inventoryId, creatorEmail, itemData);
+   
+    const result = await upsertItem(itemData, item_id);
+
     if (result.success) {
       res.status(200).json(result.item);
     } else {
@@ -364,6 +368,7 @@ router.post('/addItem', requireLogin(), async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 router.post("/deleteItem", async (req, res) => {
   const { item_id, inv_id, creator_id } = req.body;
