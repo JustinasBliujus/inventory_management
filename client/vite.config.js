@@ -6,10 +6,10 @@ export default defineConfig({
   ssr: {
     external: ["pg-hstore"],
     server: {
-      port: 4173, 
+      port: 8080, 
     },
     preview: {
-      port: 4173,
+      port: 8080,
     },
   },
 });
