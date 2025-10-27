@@ -5,8 +5,12 @@ export default defineConfig({
   plugins: [react()],
   ssr: {
     external: ["pg-hstore"],
-    server: {
-    port: 4137
-  }
+    preview: {
+    host: true,
+    allowedHosts: [
+      'abundant-exploration-production.up.railway.app',
+      'localhost'
+    ]
+  },
   },
 });
