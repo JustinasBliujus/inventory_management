@@ -6,7 +6,4 @@ export default defineConfig({
   ssr: {
     external: ["pg-hstore"],
   },
-  server: {
-    port: 5137,
-  },
 });
