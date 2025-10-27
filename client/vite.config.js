@@ -5,5 +5,8 @@ export default defineConfig({
   plugins: [react()],
   ssr: {
     external: ["pg-hstore"],
+    server: {
+    port: 4137
+  }
   },
 });
