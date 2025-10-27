@@ -8,6 +8,8 @@ export const userService = {
   isLoggedIn: () => axiosInstance.get('/isLoggedIn'),
   getUser: () => axiosInstance.get('/getUser'),
   getUsers: () => axiosInstance.get('/getUsers'),
+  search: (term) => axiosInstance.get(`/fullSearch?q=${encodeURIComponent(term)}`),
+  getUserByEmail: (email) => axiosInstance.get(`/getUserByEmail/${email}`),
   blockUsers: (data) => axiosInstance.post('/admin/block', data),
   unblockUsers: (data) => axiosInstance.post('/admin/unblock', data),
   promoteUsers: (data) => axiosInstance.post('/admin/promote', data),
@@ -19,14 +21,10 @@ export const userService = {
   saveInventory: (inventory) => axiosInstance.post(`/saveInventory`, inventory),
   saveCustomID: (customID) => axiosInstance.post('/saveCustomID', { customID }),
   saveChat: (data) => axiosInstance.post(`/saveChat`, data),
-
   getUsersInventories: (userId) => axiosInstance.get(`/getUsersInventories/${userId}`),
-
   getEditableInventories: (userId) => axiosInstance.get(`/getEditableInventories/${userId}`),
-
   deleteInventory: (inventoryId) => axiosInstance.post('/deleteInventory', { inventoryId }),
-  addEditor: (editors, inventoryId) => 
-    axiosInstance.post('/addEditor', { editors, inventoryId }),
+  addEditor: (editors, inventoryId) => axiosInstance.post('/addEditor', { editors, inventoryId }),
   deleteEditor: (inventoryId) => axiosInstance.post('/deleteEditor', { inventoryId }),
   addItem: (data) => axiosInstance.post('/addItem', data),
   searchUsersByEmail: (email) => axiosInstance.post('/search', { email }),
@@ -36,9 +34,7 @@ export const userService = {
   getPopularInventories: () => axiosInstance.get('/inventories/popular'),
   getRandomTags: () => axiosInstance.get('/random'),
   getCurrentUser: () => axiosInstance.get('/session-user'),
-  getInventoriesByTag: (tagId) => 
-    axiosInstance.get('/inventoriesByTag', {
-      params: { tagId }  
-  }),
-  logout: () => axiosInstance.post('/logout')
+  getInventoriesByTag: (tagId) => axiosInstance.get('/inventoriesByTag', {params: { tagId } }),
+  logout: () => axiosInstance.post('/logout'),
+  getAllTags: () => axiosInstance.get('/getAllTags'),
 };

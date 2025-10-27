@@ -31,7 +31,6 @@ export async function createInventory(userId, name, description = '', customFiel
 
 export async function getInventoryById(inventory_id) {
   try {
-    console.log(inventory_id, "IN INVENTORY SERVICE")
     const inventory = await Inventory.findOne({
       where: { id: inventory_id },
       include: [
@@ -179,7 +178,6 @@ export async function upsertItem(itemData, item_id, creator_email) {
 
       if (item) {
         await item.update(itemData);
-        console.log(`Item ${item_id} updated successfully.`);
       }
     }
 
@@ -189,12 +187,15 @@ export async function upsertItem(itemData, item_id, creator_email) {
         inventory_id: itemData.inventory_id,
         creator_email: creator_email,
       });
-      console.log(`Item ${item.id} created successfully.`);
+    }
+
+    if (item.custom_id.includes('{SEQ}')) {
+        const finalCustomId = item.custom_id.replaceAll('{SEQ}', item.id.toString());
+        await item.update({ custom_id: finalCustomId });
     }
 
     return { success: true, item };
   } catch (error) {
-    console.error("Error upserting item:", error);
     return { success: false, error: error.message };
   }
 }
@@ -327,15 +328,96 @@ export async function getRandomTags(limit = 10) {
 }
 
 export async function getInventoriesByTag(tagId) {
-  const tag = await Tag.findByPk(tagId, {
-    include: [{
-      model: Inventory,
-      as: 'inventories',
-      through: { attributes: [] } 
-    }]
+  const inventories = await Inventory.findAll({
+    include: [
+      {
+        model: User,
+        attributes: ['id', 'name', 'surname', 'email']
+      },
+      {
+        model: Tag,
+        as: 'tags',
+        where: { id: tagId },
+        attributes: [],
+        through: { attributes: [] }
+      }
+    ],
+    attributes: ['id', 'name', 'description'],
+    limit: 10
   });
 
-  if (!tag) return [];
+  return inventories.map(inv => ({
+    user_id: inv.user.id,
+    user_name: inv.user.name,
+    user_surname: inv.user.surname,
+    user_email: inv.user.email,
+    inventory_id: inv.id,
+    inventory_name: inv.name,
+    inventory_description: inv.description,
+  }));
+}
 
-  return tag.inventories; 
+
+export async function getUserInventories(userId) {
+  try {
+    const inventories = await Inventory.findAll({
+      where: { user_id: userId },
+    });
+    if (!inventories) {
+      return { success: false, message: "No inventories found" };
+    }
+
+    return { success: true, inventories };
+  } catch (error) {
+    console.error("Error fetching inventories:", error);
+    return { success: false, error: error.message || error };
+  }
+}
+
+export async function getEditableInventories(userId) {
+  try {
+    const editableInventories = await Inventory.findAll({
+      include: [
+        {
+          model: User,
+          as: "editors",
+          where: { id: userId },
+          through: { attributes: [] } 
+        },
+   
+        {
+          model: User,
+          as: undefined, 
+          attributes: ['email','name'], 
+        }
+      ]
+    });
+
+    const inventoriesWithCreatorEmail = editableInventories.map(inv => ({
+      id: inv.id,
+      name: inv.name,
+      user_id: inv.user_id,
+      description: inv.description,
+      is_public: inv.is_public,
+      creatorEmail: inv.user?.email,
+      createdAt: inv.createdAt
+    }));
+
+    return { success: true, inventories: inventoriesWithCreatorEmail };
+  } catch (error) {
+    console.error("Error fetching editable inventories:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getAllTags() {
+  try {
+    const tags = await Tag.findAll({
+      attributes: ["id", "name"],
+      order: [["name", "ASC"]],
+    });
+    return { success: true, tags: tags }; 
+  } catch (err) {
+    return { error: err.message };
+  }
 }

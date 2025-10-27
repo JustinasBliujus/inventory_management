@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import SharedNavbar from '../components/navbar';
 import DataTable from '../components/dataTable';
 import { Container, Alert } from 'react-bootstrap';
 import { useAppContext } from '../../appContext';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 function SearchResultsPage() {
-  const navigate = useNavigate();
+  const MAX_TEXT_LENGTH = 20;
+  const { t } = useTranslation();
   const location = useLocation();
   const { darkMode } = useAppContext();
 
@@ -21,36 +24,97 @@ function SearchResultsPage() {
     }
   }, [location.state]);
 
-  const columns = [
-    { key: 'id', label: '#', sortable: true },
+  const query = location.state?.query?.toLowerCase() || "";
+
+  const highlightMatch = (text) => {
+    if (!text) return text;
+    if (!query) {
+      return text.length > MAX_TEXT_LENGTH ? text.substring(0, 15) + '...' : text;
+    }
+
+    const lowerText = text.toLowerCase();
+    const startIndex = lowerText.indexOf(query);
+
+    if (startIndex === -1) {
+      if (text.length > MAX_TEXT_LENGTH) return text.substring(0, 15) + '...';
+      return text;
+    }
+
+    const endIndex = startIndex + query.length;
+
+    let displayStart = Math.max(0, startIndex - 5); 
+    let displayEnd = Math.min(text.length, endIndex + 5); 
+
+    if (displayEnd - displayStart > MAX_TEXT_LENGTH) {
+      displayEnd = displayStart + MAX_TEXT_LENGTH;
+    }
+
+    const prefix = displayStart > 0 ? '...' : '';
+    const suffix = displayEnd < text.length ? '...' : '';
+
+    return (
+      <>
+        {prefix}
+        {text.substring(displayStart, startIndex)}
+        <mark style={{ backgroundColor: 'yellow' }}>
+          {text.substring(startIndex, endIndex)}
+        </mark>
+        {text.substring(endIndex, displayEnd)}
+        {suffix}
+      </>
+    );
+  };
+
+const columns = [
+  { 
+    key: 'inventory_name', 
+    label: 'Inventory Name', 
+    sortable: true,
+    render: (value, row) => (
+      <Link 
+        className='text-decoration-none'
+        to='/inventory'
+        relative='route'
+        state={{ inventoryId: row.inventory_id }}
+      >
+        {highlightMatch(value)}
+      </Link>
+    )
+    },
     { 
-      key: 'name', 
-      label: 'Name', 
+      key: 'inventory_description', 
+      label: 'Description', 
+      sortable: true,
+      render: (value) => highlightMatch(value)
+    },
+    { 
+      key: 'user_name', 
+      label: `Creator's name`, 
+      sortable: true,
+      render: (value) => highlightMatch(value)
+    },
+    { 
+      key: 'user_surname', 
+      label: `Creator's last name`,
+      sortable: true,
+      render: (value) => highlightMatch(value)
+    },
+    { 
+      key: 'user_email', 
+      label: `Creator's email`, 
       sortable: true,
       render: (value, row) => (
-        <span 
-          style={{ cursor: 'pointer', color: '#0d6efd', textDecoration: 'underline' }}
-          onClick={() => handleRowClick(row)}
-        >
-          {value}
-        </span>
-      )
+      <Link 
+        className='text-decoration-none'
+        to='/personal'
+        relative='route'
+        state={{ userId: row.user_id, name: row.user_name}}
+      >
+        {highlightMatch(value)}
+      </Link>
+    )
     },
-    { key: 'description', label: 'Description', sortable: true },
-    { key: 'category', label: 'Category', sortable: true },
-    { 
-      key: 'is_public', 
-      label: 'Public', 
-      sortable: true,
-      render: (value) => (value == 1 ? 'Yes' : 'No')
-    },
-    { key: 'createdAt', label: 'Created At', sortable: true },
   ];
-
-
-  const handleRowClick = (row) => {
-    navigate('/inventory', { state: row.id });
-  };
 
   return (
     <div>
@@ -58,12 +122,20 @@ function SearchResultsPage() {
       <Container className="mt-5">
         {error && <Alert variant="danger">{error}</Alert>}
         {!error && (
-          <DataTable
-            data={inventories}
-            columns={columns}
-            itemsPerPage={10}
-            darkMode={darkMode}
-          />
+          <>
+            {location.state?.query && (
+              <h4>
+                {t('searchResultsFor', { name: `"${location.state.query}"` })}
+              </h4>
+            )}
+
+            <DataTable
+              data={inventories}
+              columns={columns}
+              itemsPerPage={10}
+              darkMode={darkMode}
+            />
+          </>
         )}
       </Container>
     </div>

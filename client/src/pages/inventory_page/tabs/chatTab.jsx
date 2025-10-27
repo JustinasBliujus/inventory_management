@@ -15,9 +15,12 @@ function ChatTab({ inventory, setInventory }) {
 
     const [posts, setPosts] = useState([]);
     const [newPost, setNewPost] = useState("");
-    const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
-    const isAdmin = user?.role === 'admin';
-    const hasWriteAccess = isOwner || isAdmin || inventory?.is_public || inventory?.editors?.includes(user?.id);
+
+    const isAdmin = user.is_admin === true;
+    const isVerified = user?.status === 'verified';
+    const isOwner = (!!user?.id && !!inventory?.user_id && user.id === inventory.user_id);
+    const isEditor = inventory?.editors?.find(e => e.email === user.email) !== undefined;
+    const hasWriteAccess = isAdmin ? true : ((isOwner || isEditor) && isVerified);
 
     useEffect(() => {
         if (inventory?.chats) {
@@ -41,7 +44,7 @@ function ChatTab({ inventory, setInventory }) {
 
         try {
             const result = await userService.saveChat(payload);
-            console.log("Chat saved:", result.data);
+
             return result.data.chat; 
         } catch (err) {
             console.error("Failed to save chat:", err);

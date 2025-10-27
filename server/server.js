@@ -12,7 +12,7 @@ dotenv.config();
 const app = express();
 
  app.use(cors({ 
-     origin: "http://localhost:5173", 
+     origin: `${process.env.MY_URL}:${process.env.CORS_PORT}`, 
      credentials: true 
  }));
 
@@ -26,7 +26,7 @@ const app = express();
    .catch(err => console.error("Error syncing models:", err));
 
  app.use(session({
-     secret: process.env.SESSION_SECRET || 'supersecretkey',
+     secret: process.env.SESSION_SECRET || 'sessionkey',
      resave: false,
      saveUninitialized: false,
      cookie: {

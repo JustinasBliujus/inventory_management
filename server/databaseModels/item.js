@@ -7,7 +7,9 @@ const Item = db.define("item", {
     autoIncrement: true,
     primaryKey: true,
   },
-
+  custom_id: {
+    type: DataTypes.STRING(1024)
+  },
   inventory_id: {
     type: DataTypes.BIGINT.UNSIGNED,
     allowNull: false,
@@ -44,6 +46,10 @@ const Item = db.define("item", {
 }, {
   tableName: "items",
   timestamps: true,
+  indexes: [
+    { name: "index_inventory_id", fields: ["inventory_id"] },
+    { name: "index_creator_email", fields: ["creator_email"] },
+  ],
 });
 
 export default Item;

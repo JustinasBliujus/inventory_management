@@ -9,6 +9,7 @@ import { Container, Spinner, Alert, OverlayTrigger, Tooltip } from 'react-bootst
 import { userService } from '../../api/userService';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../appContext';
+import { Link } from 'react-router-dom';
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -138,14 +139,14 @@ function AdminPage() {
       label: 'Email',
       sortable: true,
       render: (value, row) => (
-        console.log('Render value:', value, 'Row:', row),
-        <span
+        <Link
           className="text-decoration-none d-none d-sm-table-cell"
-          style={{ cursor: 'pointer', color: 'blue' }}
-          onClick={() => navigate('/personal', { state: { userId: row.id, name: row.name } })}
+          to='/personal'
+          relative='route'
+          state={{ userId: row.id, name: row.name }}
         >
           {value}
-        </span>
+        </Link>
       ) 
     },
     { key: 'status', label: 'Status', sortable: true },

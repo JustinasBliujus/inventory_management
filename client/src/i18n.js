@@ -94,7 +94,10 @@ const resources = {
       "itemAddedBy": "Item added by {{email}}",
       "saved": "Saved",
       "unsaved": "Unsaved",
-      "savingInfo": "Auto-saving every 10 seconds",
+      "savingInfo": "Auto-saving every 9 seconds",
+      "customIdExplanation": "ID will be applied to new elements.",
+      "verifyTooltip": "Your account is limited untill verified",
+      "searchResultsFor": "Search results for {{name}}",
     }
   },
   lt: {
@@ -189,7 +192,10 @@ const resources = {
       "itemAddedBy": "Daiktą pridėjo {{email}}",
       "saved": "Išsaugota",
       "unsaved": "Neišsaugota",
-      "savingInfo": "Išsaugoma automatiškai kas 10 sekundžių",
+      "savingInfo": "Išsaugoma automatiškai kas 9 sekundes",
+      "customIdExplanation": "ID bus pritaikytas naujiems elementams.",
+      "verifyTooltip": "Jūsų paskyra apribota, kol ją patvirtinsite",
+      "searchResultsFor": "Paieškos {{name}} rezultatai",
     }
   }
 };

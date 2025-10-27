@@ -8,6 +8,11 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10, darkMode }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
 
+  const truncateText = (text, maxLength = 20) => {
+    if (!text) return text;
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
   const handleSort = (key) => {
     setSortConfig(prev => ({
       key,
@@ -62,7 +67,7 @@ function DataTable({ data, columns, onRowClick, itemsPerPage = 10, darkMode }) {
             <tr key={row.id || index} onClick={() => onRowClick && onRowClick(row)}>
               {columns.map(col => (
                 <td key={col.key} className={col.className || ''}>
-                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                    {col.render ? col.render(row[col.key], row) : truncateText(row[col.key])}
                 </td>
               ))}
             </tr>

@@ -8,10 +8,14 @@ import { Container } from 'react-bootstrap';
 import { userService } from '../../api/userService';
 import { useTranslation } from 'react-i18next';
 import { useAppContext  } from '../../appContext';
+import Form from 'react-bootstrap/Form';
+import { Link } from 'react-router-dom';
 
 function PersonalPage() {
     const location = useLocation();
-    const { userId, name } = location.state || {};
+    const { userId, name: initialName, email } = location.state || {};
+    const [name, setName] = useState(initialName || "");
+    
     const { darkMode, user } = useAppContext();
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -20,16 +24,49 @@ function PersonalPage() {
     const [selectAll, setSelectAll] = useState(false);
     const [error, setError] = useState(location.state?.error?.message || "");
     const [success, setSuccess] = useState(location.state?.success?.message || "");
-    const isPersonal = user.id === userId;
+    const [isPersonal, setIsPersonal] = useState(false);
+    const [isVerified, setIsVerified] = useState(false);
 
     useEffect(() => {
-        const fetchInventories = async () => {
-
+      const fetchInventories = async () => {
             setError("");
+            setSuccess("");
+
             try {
-               
+                let resolvedUserId = userId;
+                
+                // If no userId but email, fetch user first
+                if (!resolvedUserId && email) {
+                    try {
+                        
+                        const userRes = await userService.getUserByEmail(email);
+                        const fetchedUser = userRes.data?.user;
+                        resolvedUserId = fetchedUser?.id;
+
+                        if (!resolvedUserId) {
+                            throw new Error("User not found for provided email.");
+                        }
+                        if (!name && fetchedUser?.name) {
+                            setName(fetchedUser.name);
+                        }
+                    } catch (err) {
+                        console.error("Error fetching user by email:", err);
+                        setError("Failed to find user by email.");
+                        return;
+                    }
+                }
+
+                if (!resolvedUserId) {
+                    setError("No user information available.");
+                    return;
+                }
+
+                const isVerified = user?.status === 'verified';
+                setIsPersonal(user.id === resolvedUserId);
+                setIsVerified(isVerified);
+                // Fetch personal inventories
                 try {
-                    const personalRes = await userService.getUsersInventories(userId);
+                    const personalRes = await userService.getUsersInventories(resolvedUserId);
                     const personalSimplified = personalRes.data.inventories.map(inv => ({
                         ...inv,
                         id: inv.id,
@@ -44,10 +81,10 @@ function PersonalPage() {
                     console.error("Error fetching personal inventories:", err);
                     setError("Failed to load personal inventories.");
                 }
-                
+
+                // Fetch editable inventories
                 try {
-                    const editableRes = await userService.getEditableInventories(userId);
-                    console.log(editableRes)
+                    const editableRes = await userService.getEditableInventories(resolvedUserId);
                     const editableSimplified = editableRes.data.inventories.map(inv => ({
                         ...inv,
                         id: inv.id,
@@ -70,13 +107,13 @@ function PersonalPage() {
         };
 
         fetchInventories();
-    }, [userId]);
+    }, [userId, email, name]);
 
 
     const handleCreateInventory = async () => {
         try {
             const response = await userService.createInventory({ name: "New Inventory", customID: "" });
-            navigate('/inventory', { state: response.data.inventoryId });
+            navigate('/inventory', { state: {inventoryId: response.data.inventoryId} });
         } catch (err) {
             console.error("Error:", err.response?.data || err.message);
             setError(err.response?.data?.message || "Creation failed!");
@@ -125,14 +162,16 @@ function PersonalPage() {
     {
         key: 'checkbox',
         label: (
-            <input
+            <Form.Check
                 type="checkbox"
                 checked={selectAll}
                 onChange={handleSelectAll}
+                disabled={!(isPersonal && isVerified)}
             />
         ),
         render: (_, row) => (
-            <input
+            <Form.Check
+                disabled={!(isPersonal && isVerified)}
                 type="checkbox"
                 checked={row.selected || false}
                 onChange={() => handleSelectRow(row)}
@@ -144,12 +183,14 @@ function PersonalPage() {
         label: 'Name',
         sortable: true,
         render: (value, row) => (
-            <span
-                style={{ cursor: 'pointer', color: '#0d6efd', }}
-                onClick={() => navigate('/inventory', { state: row.id })}
+            <Link
+                className="text-decoration-none"
+                to='/inventory'
+                relative='route'
+                state={{inventoryId: row.id}}
             >
                 {value}
-            </span>
+            </Link>
         )
     },
     { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
@@ -164,12 +205,14 @@ function PersonalPage() {
             label: 'Name',
             sortable: true,
             render: (value, row) => (
-            <span
-                style={{ cursor: 'pointer', color: '#0d6efd', }}
-                onClick={() => navigate('/inventory', { state: row.id })}
+            <Link
+                to='/inventory'
+                className="text-decoration-none"
+                relative='route'
+                state={{inventoryId: row.id }}
             >
                 {value}
-            </span>
+            </Link>
         )
         },
         { key: 'description', label: 'Description', sortable: true, className: 'd-none d-sm-table-cell' },
@@ -179,14 +222,14 @@ function PersonalPage() {
             label: 'Owner',
             sortable: true, 
             render: (value, row) => (
-                console.log('Render value:', value, 'Row:', row),
-                <span
-                className="text-decoration-none d-none d-sm-table-cell"
-                style={{ cursor: 'pointer', color: 'blue' }}
-                onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.email } })}
+                <Link
+                    className="text-decoration-none d-none d-sm-table-cell"
+                    to='/personal'
+                    relative='route'
+                    state={{email: row.owner}}
                 >
                 {value}
-                </span>
+                </Link>
             ) 
         },
         { key: 'created', label: 'Created', sortable: true, className: 'd-none d-sm-table-cell' }
@@ -212,14 +255,16 @@ function PersonalPage() {
                         : t('usersInventories', { name })}
                 </p>
 
-                <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
-                    <Button variant="danger" onClick={handleDeleteSelected} title={t('deleteSelected')}>
-                        <FaTrash color='white' />
-                    </Button>
-                    <Button variant="success" onClick={handleCreateInventory} title={t('createNewInventory')}>
-                        <FaPlus color='white' />
-                    </Button>
-                </div>
+                {isPersonal && isVerified && (
+                    <div className="d-flex gap-2 mb-3 mt-2 flex-wrap">
+                        <Button variant="danger" onClick={handleDeleteSelected} title={t('deleteSelected')}>
+                            <FaTrash color='white' />
+                        </Button>
+                        <Button variant="success" onClick={handleCreateInventory} title={t('createNewInventory')}>
+                            <FaPlus color='white' />
+                        </Button>
+                    </div>
+                )}
                 <DataTable data={inventories} columns={personalColumns} itemsPerPage={5} darkMode={darkMode} />
             </div>
 

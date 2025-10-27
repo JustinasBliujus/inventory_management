@@ -7,8 +7,10 @@ import { userService } from '../../../api/userService';
 import { useTranslation } from 'react-i18next';
 import '../../components/darkMode.css'
 import { useAppContext } from '../../../appContext';
+import { useNavigate } from 'react-router-dom';
 
 function AccessTab({ inventory, setInventory, setSaved }) {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const [isPublic, setIsPublic] = useState(false);
   const [editors, setEditors] = useState([]);
@@ -18,7 +20,6 @@ function AccessTab({ inventory, setInventory, setSaved }) {
   const searchTimeout = useRef(null);
   const { darkMode } = useAppContext();
 
-  // Initialize inventory state
   useEffect(() => {
     if (!inventory) return;
     setSelectAll(false);
@@ -34,7 +35,6 @@ function AccessTab({ inventory, setInventory, setSaved }) {
     }
   }, [inventory]);
 
-  // Search users by email
   useEffect(() => {
     if (!emailInput.trim()) {
       setSearchResults([]);
@@ -54,7 +54,6 @@ function AccessTab({ inventory, setInventory, setSaved }) {
     return () => clearTimeout(searchTimeout.current);
   }, [emailInput]);
 
-  // Helper to update inventory and mark as unsaved
   const updateInventory = (updatedEditors, updatedIsPublic = isPublic) => {
     const updatedInventory = {
       ...inventory,
@@ -62,10 +61,9 @@ function AccessTab({ inventory, setInventory, setSaved }) {
       editors: updatedEditors.map(e => ({ name: e.name, email: e.email })),
     };
     setInventory(updatedInventory);
-    setSaved(false); // mark as unsaved
+    setSaved(false); 
   };
 
-  // Add a new editor
   const handleAddEditor = (user) => {
     if (!user || editors.some(e => e.email === user.email)) return;
 
@@ -75,28 +73,24 @@ function AccessTab({ inventory, setInventory, setSaved }) {
     setSearchResults([]);
   };
 
-  // Remove selected editors
   const handleRemoveSelected = () => {
     const updatedEditors = editors.filter(editor => !editor.selected);
     updateInventory(updatedEditors);
     setSelectAll(false);
   };
 
-  // Selecting a row is purely UI, does NOT mark as unsaved
   const handleSelectRow = (email) => {
     setEditors(editors.map(editor =>
       editor.email === email ? { ...editor, selected: !editor.selected } : editor
     ));
   };
 
-  // Toggle select all rows (purely UI)
   const handleSelectAll = () => {
     const newSelectAll = !selectAll;
     setSelectAll(newSelectAll);
     setEditors(editors.map(editor => ({ ...editor, selected: newSelectAll })));
   };
 
-  // Toggle public/private inventory
   const handleTogglePublic = () => {
     updateInventory(editors, !isPublic);
     setIsPublic(prev => !prev);
@@ -126,8 +120,14 @@ function AccessTab({ inventory, setInventory, setSaved }) {
       header: 'Name',
       sortable: true,
       render: (value, row) => (
-        <a href={`/personal/${row.name}`} style={{ textDecoration: 'none' }}>{value}</a>
-      ),
+                <span
+                className="text-decoration-none d-none d-sm-table-cell"
+                style={{ cursor: 'pointer', color: 'blue' }}
+                onClick={() => navigate('/personal', { state: { email: row.email } })}
+                >
+                {value}
+                </span>
+            ) 
     },
     { key: 'email', header: 'Email', sortable: true },
   ];
@@ -155,32 +155,30 @@ function AccessTab({ inventory, setInventory, setSaved }) {
           className={darkMode ? 'textarea-dark' : ''}
         />
 
-        {/* Autocomplete dropdown */}
         {searchResults.length > 0 && (
           <div className="border position-absolute bg-white" style={{ top: '100%', left: 0, zIndex: 1000, maxHeight: '200px', overflowY: 'auto', width: '300px' }}>
             {searchResults.map(user => (
-              <button
+              <Button
                 key={user.email}
                 className="dropdown-item text-start"
                 onClick={() => handleAddEditor(user)}
               >
                 {user.name} ({user.email})
-              </button>
+              </Button>
             ))}
           </div>
         )}
 
-        <Button variant="danger" onClick={handleRemoveSelected}>
-          <FaTrash color="white" />
-        </Button>
       </div>
 
       <h4>{t('editorsWithAccess')}</h4>
+      <Button className='mb-2' variant="danger" onClick={handleRemoveSelected}>
+        <FaTrash color="white" />
+      </Button>
       <DataTable
         data={editors}
         columns={columns}
         itemsPerPage={5}
-        onRowClick={(row) => console.log('Clicked:', row)}
         darkMode={darkMode}
       />
     </div>

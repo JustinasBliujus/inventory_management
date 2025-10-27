@@ -23,13 +23,15 @@ function InventoryPage() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState("items");
   const location = useLocation();
-  const inventoryId = location.state;
+  const inventoryId = location.state?.inventoryId;
   const [inventory, setInventory] = useState(null);
   const [saved, setSaved] = useState(true); 
-  const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
+  const isAdmin = user?.is_admin === true;
+  const isOwner = (user?.id && inventory?.user_id && user.id === inventory.user_id && user?.status === 'verified') || isAdmin;
+  const MS_TILL_SAVE = 9000;
 
   const handleSave = async () => {
-    console.log(inventory)
+
     if (!inventory) return;
 
     try {
@@ -57,26 +59,25 @@ function InventoryPage() {
     try {
       const tagNames = inventory.tags.map(tag => (typeof tag === 'string' ? tag : tag.name));
       await userService.saveTags({ tags: tagNames, inventoryId: inventory.id });
-      console.log("Tags saved to server");
     } catch (err) {
       console.error("Failed to save tags:", err);
       setSaved(false);
     }
 
     try {
-        const response = await userService.saveCustomID(inventory.customID);
-        console.log(response.data);
+        await userService.saveCustomID(inventory.customID);
+
       } catch (err) {
         console.error(err);
       }
 
     try{
       const editors = inventory.editors;
-      console.log(editors, inventory.id)
+
       userService.addEditor(editors,inventory.id);
     }
     catch{
-      console.log("error updating editors")
+      console.error("error updating editors")
     }
   };
 
@@ -104,11 +105,10 @@ function InventoryPage() {
     const timeoutId = setTimeout(async () => {
         try {
         await handleSave();
-        console.log("Auto-saved inventory");
         } catch (err) {
         console.error("Auto-save failed:", err);
         } 
-    }, 2000); 
+    }, MS_TILL_SAVE); 
 
     return () => clearTimeout(timeoutId);
 
@@ -161,18 +161,26 @@ function InventoryPage() {
             <div className="d-flex align-items-center justify-content-between flex-wrap mt-5">
                 <div className="d-flex align-items-center flex-wrap">
                     <h2 className="mb-0 me-3">{inventory.name}</h2>
-                    <Badge bg={saved ? "success" : "warning"} text="light" className="me-3">
-                        {saved ? t('saved') : t('unsaved')}
-                    </Badge>
+                    {
+                      isOwner && (
+                        <Badge bg={saved ? "success" : "warning"} text="light" className="me-3" title={t('savingInfo')}>
+                            {saved ? t('saved') : t('unsaved')}
+                        </Badge>
+                      )
+                    }
                 </div>
             </div>
 
 
             <p className="mt-1">{inventory.description}</p>
 
-            <Button variant="success" onClick={handleSave} className="mb-3">
-                {t('saveInventory')}
-            </Button>
+            {
+              isOwner && (
+                <Button variant="success" onClick={handleSave} className="mb-3">
+                    {t('saveInventory')}
+                </Button>
+              )
+            }
 
             <div className="mt-4 container-fluid">
               {activeTab === "items" && <ItemsTab inventory={inventory} setInventory={setInventory} setSaved={setSaved} />}

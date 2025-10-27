@@ -1,8 +1,7 @@
-import Inventory from "../databaseModels/inventory.js";
+import { Sequelize } from 'sequelize';
 import User from "../databaseModels/user.js";
 import { Op } from "sequelize";
 
-// Get all users, ordered by last login
 export async function getUsers() {
   return await User.findAll({
     attributes: ['id','name','surname','email','status','is_admin','last_login'],
@@ -10,12 +9,10 @@ export async function getUsers() {
   });
 }
 
-// Get user by ID
 export async function getUser(id) {
   return await User.findByPk(id);
 }
 
-// Update login time by email
 export async function updateLoginTime(email) {
   await User.update(
     { last_login: new Date() },
@@ -23,7 +20,6 @@ export async function updateLoginTime(email) {
   );
 }
 
-// Block multiple users
 export async function blockUsers(emails) {
   if (!emails || emails.length === 0) return;
 
@@ -36,7 +32,6 @@ export async function blockUsers(emails) {
   );
 }
 
-// Unblock multiple users
 export async function unblockUsers(emails) {
   if (!emails || emails.length === 0) return;
 
@@ -46,7 +41,6 @@ export async function unblockUsers(emails) {
   );
 }
 
-// Promote users
 export async function promoteUsers(emails) {
   if (!emails || emails.length === 0) return;
 
@@ -56,7 +50,6 @@ export async function promoteUsers(emails) {
   );
 }
 
-// Demote users
 export async function demoteUsers(emails) {
   if (!emails || emails.length === 0) return;
 
@@ -66,7 +59,6 @@ export async function demoteUsers(emails) {
   );
 }
 
-// Verify a user
 export async function verifyUser(email) {
   await User.update(
     { status: 'verified', prev_status: 'verified' },
@@ -74,29 +66,25 @@ export async function verifyUser(email) {
   );
 }
 
-// Get user by email
 export async function getUserByEmail(email) {
+
   return await User.findOne({ where: { email } });
 }
 
-// Delete users by emails
 export async function deleteUsers(emails) {
   const deleted = await User.destroy({ where: { email: { [Op.in]: emails } } });
   return deleted;
 }
 
-// Find user by verification token
 export async function findUserByToken(token) {
   return await User.findOne({ where: { verification_token: token } });
 }
 
-// Delete all unverified users
 export async function deleteUnverified() {
   const deleted = await User.destroy({ where: { status: 'unverified' } });
   return deleted;
 }
 
-// Create a user
 export async function createUser( name, surname, password, email, verification_token ) {
   const user = await User.create({ name, surname, password, email, verification_token });
   return user;
@@ -116,6 +104,12 @@ export async function createUserGoogle(name, surname, email) {
   });
 
   if (!created) {
+    if (user.google) {
+      const error = new Error('User already exists as a Google account');
+      error.name = 'GoogleUserDuplicateError';
+      throw error;
+    }
+
     user.name = name || user.name;
     user.surname = surname || user.surname;
     user.google = true;
@@ -127,57 +121,6 @@ export async function createUserGoogle(name, surname, email) {
   return user;
 }
 
-export async function getUserInventories(userId) {
-  try {
-    const inventories = await Inventory.findAll({
-      where: { user_id: userId },
-    });
-    if (!inventories) {
-      return { success: false, message: "No inventories found" };
-    }
-
-    return { success: true, inventories };
-  } catch (error) {
-    console.error("Error fetching inventories:", error);
-    return { success: false, error: error.message || error };
-  }
-}
-
-export async function getEditableInventories(userId) {
-  try {
-    const editableInventories = await Inventory.findAll({
-      include: [
-        {
-          model: User,
-          as: "editors",
-          where: { id: userId },
-          through: { attributes: [] } 
-        },
-   
-        {
-          model: User,
-          as: undefined, 
-          attributes: ['email','name'], 
-        }
-      ]
-    });
-
-    const inventoriesWithCreatorEmail = editableInventories.map(inv => ({
-      id: inv.id,
-      name: inv.name,
-      user_id: inv.user_id,
-      description: inv.description,
-      is_public: inv.is_public,
-      creatorEmail: inv.user?.email,
-      createdAt: inv.createdAt
-    }));
-
-    return { success: true, inventories: inventoriesWithCreatorEmail };
-  } catch (error) {
-    console.error("Error fetching editable inventories:", error);
-    return { success: false, error: error.message };
-  }
-}
 
 export async function getUserByEmailPartial(email) {
   return await User.findAll({

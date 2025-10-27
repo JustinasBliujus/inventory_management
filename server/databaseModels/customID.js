@@ -44,6 +44,9 @@ const CustomID = db.define("customID", {
 }, {
   tableName: "customID",
   timestamps: true,
+  indexes: [
+    { name: "index_inventory_id", fields: ["inventory_id"] },
+  ],
 });
 
 export default CustomID;

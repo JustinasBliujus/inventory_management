@@ -1,22 +1,23 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import dotenv from 'dotenv';
 import { 
     getUsers, createUser, 
     createUserGoogle, getUserByEmail, updateLoginTime,
-    verifyUser, findUserByToken, getUserInventories,
-    getEditableInventories, getUserByEmailPartial  
+    verifyUser, findUserByToken, getUserByEmailPartial, 
 } from '../databaseService/userService.js';
 import { getInventoryById } from '../databaseService/inventoryService.js';
 import { sendVerificationEmail } from './mailer.js';
-import crypto from 'crypto';
-import dotenv from 'dotenv';
-import { requireLogin, requireAdmin, requireUnblocked } from './middlewares.js';
+import { requireLogin, requireUnblocked } from './middlewares.js';
+import { searchAll } from '../databaseService/search.js'
 import adminRoutes from './adminRoutes.js';
 import {createInventory, updateInventory, saveChat,
-   deleteInventory, saveCustomID, addEditor, deleteItem, saveInventoryTags,
-     getLastInventories, getMostPopularInventories,
-     getRandomTags, upsertItem, getInventoriesByTag
-    } from '../databaseService/inventoryService.js';
+    deleteInventory, saveCustomID, addEditor, deleteItem, saveInventoryTags,
+    getLastInventories, getMostPopularInventories,
+    getRandomTags, upsertItem, getInventoriesByTag,
+    getUserInventories, getEditableInventories,getAllTags
+} from '../databaseService/inventoryService.js';
 
 const TOKEN_BYTES_LENGTH = 32;
 const SALT_ROUNDS = 10;
@@ -63,7 +64,12 @@ router.post('/login', async (req, res) => {
                 message: "User not found"
         });
     }
-
+    if (user && user.password === null) {
+        return res.status(404).json({ 
+                status: "error",
+                message: "This account was created using Google login."
+        });
+    }
     try {
         const passwordMatch = await bcrypt.compare(password, user.password);
 
@@ -90,6 +96,7 @@ router.post('/login', async (req, res) => {
         });
     }
 });
+
 router.get("/session-user", (req, res) => {
   if (req.session.user) {
     res.json({ success: true, user: req.session.user });
@@ -113,35 +120,48 @@ router.get('/getUsers', requireLogin(), requireUnblocked(), async (req, res) => 
 });
 
 router.post('/registerGoogle', async (req, res) => {
-   try {
-     const { name, surname, email } = req.body;
+  try {
+    const { name, surname, email } = req.body;
 
-     if (!name || !surname || !email) {
-       return res.status(400).json({ status: "error", message: "Missing name, surname, or email" });
-     }
+    if (!name || !surname || !email) {
+      return res.status(400).json({ 
+        status: "error", 
+        message: "Missing name, surname, or email" 
+      });
+    }
 
-     const user = await getUserByEmail(email);
+    const user = await getUserByEmail(email);
 
-     if(user && user.status === 'blocked'){
-        return res.status(403).json({ status: "error", message: "User is blocked" });
-     }
+    if (user && user.status === 'blocked') {
+      return res.status(403).json({ 
+        status: "error", 
+        message: "User is blocked" 
+      });
+    }
 
-     const result = await createUserGoogle(name, surname, email);
+    const result = await createUserGoogle(name, surname, email);
 
-     if (result) {
-       return res.status(201).json({ status: "success", message: "User created successfully" });
-     } else {
-       return res.status(400).json({ status: "error", message: "User failed to create" });
-     }
+    return res.status(201).json({ 
+      status: "success", 
+      message: "User created successfully", 
+      user: result 
+    });
 
-   } catch (err) {
-     if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ status: "error", message: "User already exists" });
-     }
-     return res.status(500).json({ status: "error", message: "Internal server error" });
-   }
+  } catch (err) {
+    if (err.name === 'GoogleUserDuplicateError') {
+      return res.status(409).json({ 
+        status: "error", 
+        message: "User already exists" 
+      });
+    }
+
+    console.error(err);
+    return res.status(500).json({ 
+      status: "error", 
+      message: "Internal server error" 
+    });
+  }
 });
-
 
 router.post('/register', async (req, res) => {
     try {
@@ -164,19 +184,18 @@ router.post('/register', async (req, res) => {
         }
 
     } catch (err) {
-
-        if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ 
-                status: "error",
-                message: "User already exists" 
-            });
-        }
-
-        return res.status(500).json({ 
+    if (err.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).json({ 
             status: "error",
-            message: err.code 
+            message: "User already exists" 
         });
     }
+
+    return res.status(500).json({ 
+        status: "error",
+        message: "Internal server error"  
+    });
+}
 });
 
 router.get('/verify', async (req, res) => {
@@ -213,6 +232,7 @@ router.post('/logout', (req, res) => {
   });
 });
 
+
 router.post('/createInventory', requireLogin(), requireUnblocked(), async (req, res) => {
   const { name } = req.body;
   const userID = req.session.user.id;
@@ -227,10 +247,9 @@ router.post('/createInventory', requireLogin(), requireUnblocked(), async (req, 
   }
 });
 
-router.get("/getInventory/:id", requireLogin(), async (req, res) => {
+router.get("/getInventory/:id", requireLogin(), requireUnblocked(), async (req, res) => {
   
   const { id } = req.params;
-  console.log(id, " IN ROUTER GET INVENTORY")
   const result = await getInventoryById(id);
 
   if (!result.success) return res.status(404).json(result);
@@ -238,7 +257,7 @@ router.get("/getInventory/:id", requireLogin(), async (req, res) => {
   res.json(result.inventory.dataValues);
 });
 
-router.get("/getUsersInventories/:userId", requireLogin(), async (req, res) => {
+router.get("/getUsersInventories/:userId", requireLogin(), requireUnblocked(), async (req, res) => {
   const { userId } = req.params;
 
   const result = await getUserInventories(userId);
@@ -250,7 +269,7 @@ router.get("/getUsersInventories/:userId", requireLogin(), async (req, res) => {
   res.json({ success: true, inventories: result.inventories });
 });
 
-router.post("/saveInventory", requireLogin(), async (req, res) => {
+router.post("/saveInventory", requireLogin(), requireUnblocked(), async (req, res) => {
     const { inv_id, creator_id, ...fields } = req.body;
     try {
         const inv = await updateInventory(inv_id, creator_id, fields);
@@ -260,7 +279,7 @@ router.post("/saveInventory", requireLogin(), async (req, res) => {
     }
 });
 
-router.post("/saveChat", requireLogin(), async (req, res) => {
+router.post("/saveChat", requireLogin(), requireUnblocked(), async (req, res) => {
   const { inventory_id, message } = req.body;
   const creator_email = req.session.user.email;
 
@@ -272,12 +291,12 @@ router.post("/saveChat", requireLogin(), async (req, res) => {
   }
 });
 
-router.get("/getEditableInventories/:userId", requireLogin(), async (req, res) => {
+router.get("/getEditableInventories/:userId", requireLogin(), requireUnblocked(), async (req, res) => {
   try {
     const { userId } = req.params;
     
     const result = await getEditableInventories(userId);
-    console.log(result, " IN GET EDITABLE ROUTER")
+
     if (!result.success) {
       return res.status(500).json(result);
     }
@@ -288,7 +307,7 @@ router.get("/getEditableInventories/:userId", requireLogin(), async (req, res) =
   }
 });
 
-router.post('/deleteInventory', requireLogin(), async (req, res) => {
+router.post('/deleteInventory', requireLogin(), requireUnblocked(), async (req, res) => {
   const { inventoryId } = req.body;
   const userId = req.session.user.id;
 
@@ -311,7 +330,7 @@ router.post('/deleteInventory', requireLogin(), async (req, res) => {
   }
 });
 
-router.post('/saveCustomID', requireLogin(), async (req, res) => {
+router.post('/saveCustomID', requireLogin(), requireUnblocked(), async (req, res) => {
   const user_id = req.session.user.id;
   const customID = req.body.customID;
 
@@ -327,7 +346,7 @@ router.post('/saveCustomID', requireLogin(), async (req, res) => {
   res.json(result);
 });
 
-router.post("/search", async (req, res) => {
+router.post("/search", requireLogin(), requireUnblocked(), async (req, res) => {
   try {
     const { email } = req.body;
 
@@ -341,7 +360,7 @@ router.post("/search", async (req, res) => {
   }
 });
 
-router.post('/addEditor', requireLogin(), async (req, res) => {
+router.post('/addEditor', requireLogin(), requireUnblocked(), async (req, res) => {
   try {
     const { editors, inventoryId } = req.body;
     if (!inventoryId || !Array.isArray(editors)) {
@@ -359,12 +378,11 @@ router.post('/addEditor', requireLogin(), async (req, res) => {
   }
 });
 
-router.post('/addItem', requireLogin(), async (req, res) => {
-  console.log("in router hit")
+router.post('/addItem', requireLogin(), requireUnblocked(), async (req, res) => {
+
   const { itemData, item_id } = req.body;
   const creator_email = req.session.user.email;
-  console.log("in router "+JSON.stringify(itemData,null,2))
-  console.log("in router "+item_id)
+
   try {
    
     const result = await upsertItem(itemData, item_id, creator_email);
@@ -398,7 +416,7 @@ router.post("/deleteItem", async (req, res) => {
 
 router.post("/saveTags", requireLogin(), async (req, res) => {
   const { tags, inventoryId } = req.body;
-  console.log(tags+" "+inventoryId)
+
   try {
     const savedTags = await saveInventoryTags(req.session.user.id, inventoryId, tags);
     res.json({ success: true, tags: savedTags });
@@ -438,5 +456,35 @@ router.get('/inventoriesByTag', async (req, res) => {
   }
 });
 
+router.get('/getUserByEmail/:email', async (req, res) => {
+  try {
+    const {email} = req.params; 
+    if (!email) return res.status(400).json({ success: false, message: 'email is required' });
+
+    const user = await getUserByEmail(email);
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+router.get("/fullSearch", async (req, res) => {
+  const { q } = req.query;
+  if (!q) return res.json([]);
+  const results = await searchAll(q);
+  res.json(results);
+});
+
+router.get("/getAllTags", async (req, res) => {
+  try {
+    const tags = await getAllTags();
+    res.json(tags);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;

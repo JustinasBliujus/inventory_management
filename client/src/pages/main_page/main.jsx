@@ -8,8 +8,10 @@ import { useAppContext } from '../../appContext';
 import { useEffect, useState } from 'react';
 import { userService } from '../../api/userService';
 import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function MainPage() {
+  const DESCRIPTION_MAX_LENGTH = 20;
   const { darkMode } = useAppContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -31,10 +33,8 @@ function MainPage() {
   </div>
 )
   const handleTagClick = async (tag) => {
-    console.log('Tag clicked:', tag.value);
-
     const { data } = await userService.getInventoriesByTag(tag.id); 
-    console.log('Inventories:', data.inventories);
+
     navigate('/search', { state: { inventories: data.inventories } });
   };
 
@@ -95,30 +95,41 @@ function MainPage() {
   const latestColumns = [
     { 
       key: 'name', label: 'Name', sortable: true, render: (value, row) => (
-            <span
-                style={{ cursor: 'pointer', color: '#0d6efd', }}
-                onClick={() => navigate('/inventory', { state: row.id })}
-            >
-                {value}
-            </span>
+        <Link
+            to='/inventory'
+            state={{ inventoryId: row.id }}
+            className='text-decoration-none'
+            relative='route'
+        >
+            {value}
+        </Link>
         )
     },
     { key: 'category', label: 'Category', sortable: true, render: (value) => value || '-' },
-    { key: 'description', label: 'Description', sortable: true, render: (value) => value || '-' },
+    { key: 
+      'description', 
+      label: 'Description',
+      sortable: true, 
+      render: (value) => {
+        if (!value) return '-';
+        const maxLength = DESCRIPTION_MAX_LENGTH;
+        return value.length > maxLength ? value.substring(0, maxLength) + '...' : value;
+      }
+    },
     { 
       key: 'creator',
       label: 'Creator',
       sortable: true, 
       className: 'd-none d-sm-table-cell', 
       render: (value, row) => (
-        console.log('Render value:', value, 'Row:', row),
-        <span
+        <Link
           className="text-decoration-none d-none d-sm-table-cell"
-          style={{ cursor: 'pointer', color: 'blue' }}
-          onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.user.name } })}
+          relative='route'
+          to='/personal'
+          state={{ userId: row.user_id, name: row.user.name}}
         >
           {value}
-        </span>
+        </Link>
       ) 
     },
     { key: 'created', label: 'Created At', sortable: true, render: (value) => value || '-' },
@@ -127,16 +138,27 @@ function MainPage() {
   const popularColumns = [
     { 
       key: 'name_pop', label: 'Name', sortable: true, render: (value, row) => (
-            <span
-                style={{ cursor: 'pointer', color: '#0d6efd', }}
-                onClick={() => navigate('/inventory', { state: row.id })}
+            <Link
+                to='/inventory'
+                state={{ inventoryId: row.id }}
+                className='text-decoration-none'
+                relative='route'
             >
                 {value}
-            </span>
+            </Link>
         )
     },
     { key: 'category_pop', label: 'Category', sortable: true, render: (value) => value || '-' },
-    { key: 'description_pop', label: 'Description', sortable: true, render: (value) => value || '-' },
+    { 
+      key: 'description_pop',
+      label: 'Description',
+      sortable: true,
+      render: (value) => {
+        if (!value) return '-';
+        const maxLength = DESCRIPTION_MAX_LENGTH;
+        return value.length > maxLength ? value.substring(0, maxLength) + '...' : value;
+      }
+    },
     { key: 'itemCount_pop', label: 'Item count', sortable: true },
     { 
       key: 'creator_pop', 
@@ -144,13 +166,14 @@ function MainPage() {
       sortable: true, 
       className: 'd-none d-sm-table-cell', 
       render: (value, row) => (
-        <span
+        <Link
           className="text-decoration-none d-none d-sm-table-cell"
-          style={{ cursor: 'pointer', color: 'blue' }}
-          onClick={() => navigate('/personal', { state: { userId: row.user_id, name: row.user.name } })}
+          to='/personal'
+          relative='route'
+          state={{ userId: row.user_id, name: row.user.name }}
         >
           {value}
-        </span>
+        </Link>
       )  
     },
   ];

@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Button, Card, Spinner } from 'react-bootstrap';
+import { Button, Card } from 'react-bootstrap';
 import { FaEdit } from "react-icons/fa";
 import SharedNavbar from '../components/navbar';
 import {Container} from 'react-bootstrap';
@@ -14,11 +13,12 @@ function ItemsPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const { item_id, inventory } = location.state || {};
-    const [imgLoaded, setImgLoaded] = useState(false);
-    const requiredItem = Object.values(inventory.items).find(i => i.id = item_id);
-    const isEditor = (inventory.user_id === user.id) || inventory.is_public === true;
+    const requiredItem = Object.values(inventory.items).find(i => i.id == item_id);
+    const isOwner = inventory.user_id === user.id || user.is_admin === true;
+    const isEditor = isOwner || inventory.is_public === true || (inventory?.editors?.find(e => e.email === user.email) !== undefined);
 
-    if (!item_id) return <div>No item data found!</div>;
+    if (!item_id) return <div>{t('noElements')}</div>;
+
     const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
     const mapping = [];
 
@@ -34,18 +34,21 @@ function ItemsPage() {
             value: requiredItem[`custom_${type}${i}`],
             });
         }
+        
         }
     });
 
     return (
         <div>
-            <SharedNavbar></SharedNavbar>
+        <SharedNavbar></SharedNavbar>
         <Container className='w-75 my-5'>
             <Card
                 className={darkMode ? 'bg-dark text-light' : ''}
                 style={darkMode ? { border: '1px solid #555' } : {}}
                 >
-                <div className="d-flex justify-content-end p-2" title={!isEditor ? t('noWriteAccess') : t('edit')}>
+                <div className="d-flex justify-content-between p-2" title={!isEditor ? t('noWriteAccess') : t('edit')}>
+                
+                    <p>{requiredItem.custom_id || requiredItem.id}</p>
                     <Button
                         disabled = {!isEditor}
                         variant='primary'
@@ -55,36 +58,20 @@ function ItemsPage() {
                     </Button>
                 </div>
 
-                {requiredItem.imageUrl && !imgLoaded && (
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '100px 0' }}>
-                    <Spinner animation="border" />
-                    </div>
-                )}
-
-                {requiredItem.imageUrl && (
-                    <Card.Img
-                    variant="top"
-                    src={requiredItem.imageUrl}
-                    alt={requiredItem.name}
-                    style={{
-                        maxHeight: '400px',
-                        objectFit: 'cover',
-                        display: imgLoaded ? 'block' : 'none',
-                        filter: darkMode ? 'brightness(0.8)' : 'none',
-                    }}
-                    onLoad={() => setImgLoaded(true)}
-                    />
-                )}
-
                 <Card.Body>
                     <Card.Title style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>
                         {t('itemAddedBy', { email: requiredItem.creator_email })}
                     </Card.Title>
                     {mapping.map((it, index) => (
                     <Card.Text key={index}>
-                        <strong>{`${it.label}: `}</strong> {it.value || 'N/A'}
+                        <strong>{`${it.label}: `}</strong> 
+                            {it.value !== null && it.value !== undefined 
+                            ? (typeof it.value === 'boolean' ? (it.value ? 'Yes' : 'No') 
+                            : it.value) 
+                            : 'N/A'}
                     </Card.Text>
                     ))}
+
                 </Card.Body>
                 </Card>
 

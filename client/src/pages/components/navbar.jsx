@@ -8,16 +8,16 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../../appContext';
 import './darkMode.css';
-import { FaSun , FaRegMoon } from "react-icons/fa";
+import { FaSun , FaRegMoon, FaExclamation } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import { userService } from '../../api/userService';
 
-function SharedNavbar({ onSearch }) {
+function SharedNavbar() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { darkMode, toggleTheme, toggleLanguage, user, setUser } = useAppContext();
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState("");  
 
   useEffect(() => {
     if (!user) {
@@ -29,11 +29,24 @@ function SharedNavbar({ onSearch }) {
     }
   }, [user, setUser]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (onSearch) onSearch(query);
-  };
-  
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!query.trim()) return;
+
+  try {
+    const res = await userService.search(query); 
+    const searchResults = res.data || [];
+
+    if (searchResults.length > 0) {
+      navigate('/search', { state: { inventories: searchResults, query } });
+    } else {
+      navigate('/search', { state: {} });
+    }
+  } catch{
+    navigate('/search', { state: {} });
+  }
+};
+
   return (
     <Navbar
       className='position-relative top-0 start-0'
@@ -61,9 +74,24 @@ function SharedNavbar({ onSearch }) {
           <Nav className="ms-auto align-items-center nav-items-collapsed">
 
             {/* User Info */}
-            <div title="Admin" className="d-flex align-items-center gap-2 d-none d-lg-flex" style={{cursor: "pointer"}} onClick={() => navigate('/personal', { state: { userId: user.id } })}>
+            <div
+              title={user?.status !== 'verified' ? t('verifyTooltip') : user?.role || 'User'}
+              className="d-flex align-items-center gap-2 d-none d-lg-flex"
+              style={{ cursor: "pointer", position: "relative" }}
+              onClick={() => navigate('/personal', { state: { userId: user.id } })}
+            >
               <span className="fw-medium">{user?.name || ""}</span>
+
+              {user?.status !== 'verified' && (
+                <FaExclamation
+                  color="red"
+                  size={18}
+                  title={t('verifyTooltip')}
+                  style={{ marginLeft: '4px', cursor: 'help' }}
+                />
+              )}
             </div>
+
 
             <Button
               className="d-lg-none w-100 my-2"

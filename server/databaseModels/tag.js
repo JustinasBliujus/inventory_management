@@ -15,6 +15,9 @@ const Tag = db.define("tag", {
 }, {
   tableName: "tags",
   timestamps: true,
+  indexes: [
+    { name: "index_tag_name", unique: true, fields: ["name"] },
+  ],
 });
 
 export default Tag;

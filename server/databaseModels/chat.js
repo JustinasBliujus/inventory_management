@@ -22,6 +22,10 @@ const Chat = db.define("chat", {
 }, {
   tableName: "chats",
   timestamps: true,
+  indexes: [
+    { name: "index_inventory_id", fields: ["inventory_id"] },
+    { name: "index_creator_email", fields: ["creator_email"] },
+  ],
 });
 
 export default Chat;

@@ -10,7 +10,17 @@ import Badge from 'react-bootstrap/Badge';
 function SettingsTab({ inventory, setInventory, setSaved }) {
     const MAX_TAGS = 3;
     const MAX_LENGTH_TAGS = 15;
-
+    const categories = [
+        "Electronics",
+        "Office",
+        "Tools",
+        "Clothing",
+        "Home",
+        "Food",
+        "Health",
+        "Sports",
+        "Miscellaneous"
+    ];
     const [name, setName] = useState(inventory.name || '');
     const [description, setDescription] = useState(inventory.description || '');
     const [category, setCategory] = useState(inventory.category || '');
@@ -125,16 +135,11 @@ function SettingsTab({ inventory, setInventory, setSaved }) {
                         onChange={handleCategoryChange}
                         className={darkMode ? 'textarea-dark' : ''}
                     >
-                        <option>Select category</option>
-                        <option value="Electronics">Electronics</option>
-                        <option value="Office">Office</option>
-                        <option value="Tools">Tools</option>
-                        <option value="Clothing">Clothing</option>
-                        <option value="Home">Home</option>
-                        <option value="Food">Food</option>
-                        <option value="Health">Health</option>
-                        <option value="Sports">Sports</option>
-                        <option value="Miscellaneous">Miscellaneous</option>
+                        {categories.map((category) => (
+                        <option key={category} value={category}>
+                        {category}
+                        </option>
+                    ))}
                     </Form.Select>
                 </Form.Group>
 

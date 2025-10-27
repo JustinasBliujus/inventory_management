@@ -10,16 +10,15 @@ import { Link } from 'react-router-dom';
 
 function InventoryItems({ inventory }) {
   const { darkMode, user } = useAppContext();
-
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [items, setItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const isOwner = !!user?.id && !!inventory?.user_id && user.id === inventory.user_id;
-  const isAdmin = user?.role === 'admin';
-  const hasWriteAccess = isOwner || isAdmin || inventory?.is_public || inventory?.editors?.includes(user?.id);
+  const isAdmin = user?.is_admin === true;
+  const isOwner = (user?.id && inventory?.user_id && user.id === inventory.user_id && user?.status === 'verified') || isAdmin;
+  const hasWriteAccess = (isOwner || inventory?.is_public || (inventory?.editors?.find(e => e.email === user.email) !== undefined)) && user?.status === 'verified';
 
   useEffect(() => {
     if (inventory?.items) {
@@ -77,19 +76,21 @@ function InventoryItems({ inventory }) {
     for (let i = 1; i <= 3; i++) {
       const showKey = `custom_${type}${i}_show`;
       const nameKey = `custom_${type}${i}_name`;
-      //const descKey = `custom_${type}${i}_desc`;
       const stateKey = `custom_${type}${i}_state`;
 
       if (inventory[showKey] && inventory[stateKey]) {
         customColumns.push({
-          key: `${type}${i}`,
+          key: `custom_${type}${i}`, 
           label: inventory[nameKey] || `${type} ${i}`,
-          render: (value) => {
-            if (type === 'bool') return value ? 'Yes' : 'No';
-            return value || '-';
+          render: (_, row) => {
+            const cellValue = row[`custom_${type}${i}`];
+            if (type === 'bool') return cellValue ? 'Yes' : 'No';
+            return cellValue ?? '-';
           },
           sortable: true
         });
+
+        
       }
     }
   });
@@ -97,8 +98,8 @@ function InventoryItems({ inventory }) {
   const columns = [
     {
       key: 'select',
-      label: <Form.Check type="checkbox" checked={selectAll} onChange={handleSelectAll} />,
-      render: (_, row) => <Form.Check type="checkbox" checked={row.selected} onChange={() => handleSelectRow(row.id)} />
+      label: <Form.Check type="checkbox" disabled={!hasWriteAccess} checked={selectAll} onChange={handleSelectAll}/>,
+      render: (_, row) => <Form.Check disabled={!hasWriteAccess} type="checkbox" checked={row.selected} onChange={() => handleSelectRow(row.id)} />
     },
     { 
       key: 'id', 
@@ -109,10 +110,12 @@ function InventoryItems({ inventory }) {
           to="/item"
           state={{ item_id: row.id, inventory: inventory }}
           className="text-decoration-none"
+          style={{ whiteSpace: 'nowrap' }}
         >
           {value}
         </Link>
-      ) },
+      ) 
+    },
     {
       key: 'creator_email',
       label: 'Creator Email',
@@ -120,7 +123,7 @@ function InventoryItems({ inventory }) {
       render: (value, row) => (
         <Link
           to="/personal"
-          state={{ userId: row.creator_id }}
+          state={{ email: row.creator_email }}
           className="text-decoration-none"
         >
           {value}
@@ -139,24 +142,28 @@ function InventoryItems({ inventory }) {
 
       <h4>{t('items')}</h4>
 
-      <div className="d-flex justify-content-start gap-2 mb-3">
-        <Button
-          variant="danger"
-          onClick={handleDeleteItems}
-          disabled={!hasWriteAccess}
-          title={hasWriteAccess ? t('deleteSelected') : t('noWriteAccess')}
-        >
-          <FaTrash color='white' />
-        </Button>
-        <Button
-          disabled={!hasWriteAccess}
-          title={hasWriteAccess ? t('addNewItem') : t('noWriteAccess')}
-          variant="success"
-          onClick={() => navigate('/addItem', { state: { inventory } })}
-        >
-          <FaPlus color='white' />
-        </Button>
-      </div>
+      {
+        hasWriteAccess && (
+          <div className="d-flex justify-content-start gap-2 mb-3">
+            <Button
+              variant="danger"
+              onClick={handleDeleteItems}
+              disabled={!hasWriteAccess}
+              title={hasWriteAccess ? t('deleteSelected') : t('noWriteAccess')}
+            >
+              <FaTrash color='white' />
+            </Button>
+            <Button
+              disabled={!hasWriteAccess}
+              title={hasWriteAccess ? t('addNewItem') : t('noWriteAccess')}
+              variant="success"
+              onClick={() => navigate('/addItem', { state: { inventory } })}
+            >
+              <FaPlus color='white' />
+            </Button>
+          </div>
+        )
+      }
 
       <DataTable data={items} columns={columns} itemsPerPage={5} darkMode={darkMode} />
     </div>

@@ -56,7 +56,7 @@ const User = db.define("user", {
   is_admin: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
-    defaultValue: true,
+    defaultValue: false,
   },
 
   google: {
@@ -79,6 +79,7 @@ const User = db.define("user", {
       unique: true,
       fields: ["email"],
     },
+    { name: "fulltext_user_search", type: "FULLTEXT", fields: ["name", "surname", "email"] },
   ],
 });
 

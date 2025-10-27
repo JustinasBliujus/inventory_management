@@ -19,7 +19,6 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
   const [elements, setElements] = useState([]);
   const scrollContainerRef = useRef(null);
 
-  // Initialize elements from inventory.customID
   useEffect(() => {
     if (!inventory?.customID) return;
 
@@ -32,9 +31,9 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
       if (type) newElements.push({ type, format, value });
     }
     setElements(newElements);
+    console.log(newElements)
   }, [inventory]);
 
-  // Update inventory state and mark unsaved
   const updateInventory = (updatedElements) => {
     setElements(updatedElements);
 
@@ -50,7 +49,7 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
     }
 
     setInventory(updatedInventory);
-    setSaved(false); // mark as unsaved
+    setSaved(false); 
   };
 
   const moveElement = (from, to) => {
@@ -86,7 +85,7 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
       <div className='p-2'>
         <h4>{t('idBuilder')}</h4>
         <p>{t('idBuilderExplanation', { count: MAX_ELEMENTS })}</p>
-
+        <p>{t('customIdExplanation')}</p>
         <div className="d-flex flex-wrap gap-2 mb-3">
           {ELEMENT_TYPES.map((t) => (
             <OverlayTrigger

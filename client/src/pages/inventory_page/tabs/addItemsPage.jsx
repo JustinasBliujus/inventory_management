@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
@@ -7,15 +7,34 @@ import { userService } from '../../../api/userService';
 import SharedNavbar from '../../components/navbar';
 import '../../components/darkMode.css';
 import { useAppContext } from '../../../appContext';
+import { renderValue } from './customId/components/elementUtils'
+import { useTranslation } from 'react-i18next';
 
 function AddItemsPage() {
+  const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
   const { inventory, mapping, item_id } = location.state || {};
   const { darkMode } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const [elements, setElements] = useState([]);
+  
+  useEffect(() => {
+      if (!inventory?.customID) return;
+  
+      const newElements = [];
+      for (let i = 0; i < 10; i++) {
+        const type = inventory.customID[`part_${i + 1}_type`];
+        const format = inventory.customID[`part_${i + 1}_format`];
+        const value = inventory.customID[`part_${i + 1}_value`];
+  
+        if (type) newElements.push({ type, format, value });
+      }
+      setElements(newElements);
+      console.log(newElements)
+    }, [inventory]);
+    
 
-  console.log(item_id+" IN AD ITEMS")
   const customTypes = ['line', 'multiline', 'number', 'url', 'bool'];
 
   const initialValues = {};
@@ -32,7 +51,7 @@ function AddItemsPage() {
 
   const [formValues, setFormValues] = useState(initialValues);
 
-  if (!inventory) return <p>No inventory selected</p>;
+  if (!inventory) return <p>{t('noInventory')}</p>;
 
   const formFields = [];
   for (let type of customTypes) {
@@ -69,14 +88,22 @@ function AddItemsPage() {
       Object.entries(formValues).forEach(([key, value]) => {
         itemData[`custom_${key}`] = value;
       });
+      let customId = elements.map(el => {
+        if (el.type === 'Sequence') {
+          
+          return '{SEQ}';
+        } else {
+          return renderValue(el); 
+        }
+      }).join('-');
 
+      itemData.custom_id = customId;
       itemData.inventory_id = inventory.id;
-      console.log(item_id, "BEFORE SENDING");
-      console.log(itemData, "BEFORE SENDING");
-      const response = await userService.addItem( {itemData, item_id} );
 
-      console.log('Item added successfully:', response.data);
-      navigate(-1);
+      await userService.addItem( {itemData, item_id} );
+      
+      item_id ? navigate(-2) : navigate(-1);
+      
     } catch (error) {
       console.error('Error adding item:', error.response?.data || error.message);
     } finally {

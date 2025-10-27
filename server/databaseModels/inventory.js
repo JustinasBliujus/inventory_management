@@ -44,6 +44,7 @@ const Inventory = db.define("inventory", {
     allowNull: false,
     defaultValue: false,
   },
+  
   // ---------- Custom single-line fields ----------
   custom_line1_state: { type: DataTypes.BOOLEAN, defaultValue: false },
   custom_line1_name: { type: DataTypes.STRING(255) },
@@ -128,6 +129,11 @@ const Inventory = db.define("inventory", {
 {
   tableName: "inventory",
   timestamps: true,
+  indexes: [
+    { name: "index_user_id", fields: ["user_id"] },
+    { name: "index_category", fields: ["category"] },
+    { name: "fulltext_inventory_search", type: "FULLTEXT", fields: ["name", "description"]},
+  ],
 });
 
 export default Inventory;

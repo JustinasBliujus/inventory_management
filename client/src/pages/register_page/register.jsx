@@ -163,7 +163,6 @@ function RegisterPage() {
                 const credential = jwtDecode(credentials.credential);
                 handleRegisterGoogle(credential);
               }}
-              onError={() => console.log("Register Failed")}
             />
           </div>
 
