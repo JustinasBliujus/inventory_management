@@ -6,11 +6,8 @@ export default defineConfig({
   ssr: {
     external: ["pg-hstore"],
     preview: {
-    host: true,
-    allowedHosts: [
-      'abundant-exploration-production.up.railway.app',
-      'localhost'
-    ]
-  },
+      host: true,
+      allowedHosts: 'all'
+    }
   },
 });
