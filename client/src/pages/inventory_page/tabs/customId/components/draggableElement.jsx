@@ -84,7 +84,7 @@ function DraggableElement({
 
       {element.type === 'Fixed text' && (
         <Form.Control
-          className="mt-2"
+          className={darkMode ? 'bg-dark text-white border-secondary' : ''}
           placeholder="Enter fixed text"
           value={element.value || ''}
           onChange={(e) => handleChange('value', e.target.value)}

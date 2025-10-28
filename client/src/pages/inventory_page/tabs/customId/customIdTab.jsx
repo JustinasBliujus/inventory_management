@@ -31,7 +31,7 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
       if (type) newElements.push({ type, format, value });
     }
     setElements(newElements);
-    console.log(newElements)
+
   }, [inventory]);
 
   const updateInventory = (updatedElements) => {
@@ -115,7 +115,7 @@ function IdBuilderTab({ inventory, setInventory, setSaved }) {
         <Card className={`p-2 mb-3 ${darkMode ? 'textarea-dark' : ''}`}>
           {elements.length > 0
             ? elements.map(el => el.value).join('-')
-            : <span className="text-muted">{t('noId')}</span>}
+            : <span>{t('noId')}</span>}
         </Card>
 
         {elements.length === 0 && <p className="text-muted">{t('noElements')}</p>}
