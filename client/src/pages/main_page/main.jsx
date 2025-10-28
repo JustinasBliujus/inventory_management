@@ -12,50 +12,50 @@ import { Link } from 'react-router-dom';
 
 function MainPage() {
   const DESCRIPTION_MAX_LENGTH = 20;
-  const MAX_TAG_SIZE_DIVIDER = 20;
-  const MIN_TAG_SIZE_DIVIDER = 40;
+  const TAG_SIZE_MIN_SMALL_SCREEN=12;
+  const TAG_SIZE_MAX_SMALL_SCREEN=20;
+  const TAG_SIZE_MIN_MEDIUM_SCREEN=16;
+  const TAG_SIZE_MAX_MEDIUM_SCREEN=28;
+  const TAG_SIZE_MIN_BIG_SCREEN=20;
+  const TAG_SIZE_MAX_BIG_SCREEN=40;
+  const SMALL_SCREEN_SIZE = 578;
+  const MEDIUM_SCREEN_SIZE = 768;
   const { darkMode } = useAppContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [sizes, setSizes] = useState({ minSize: 12, maxSize: 35 });
   const [latestInventories, setLatestInventories] = useState([]);
   const [popularInventories, setPopularInventories] = useState([]);
   const [tags, setTags] = useState([]);
+  const [tagSizes, setTagSizes] = useState({ min: TAG_SIZE_MIN_BIG_SCREEN, max: TAG_SIZE_MAX_BIG_SCREEN });
+
+  useEffect(() => {
+    if (window.innerWidth < SMALL_SCREEN_SIZE) { 
+      setTagSizes({ min: TAG_SIZE_MIN_SMALL_SCREEN, max: TAG_SIZE_MAX_SMALL_SCREEN });
+    } else if (window.innerWidth < MEDIUM_SCREEN_SIZE) { 
+      setTagSizes({ min: TAG_SIZE_MIN_MEDIUM_SCREEN, max: TAG_SIZE_MAX_MEDIUM_SCREEN });
+    } else { 
+      setTagSizes({ min: TAG_SIZE_MIN_BIG_SCREEN, max: TAG_SIZE_MAX_BIG_SCREEN });
+    }
+  }, []); 
 
   const SimpleCloud = () => (
-  <div className='d-flex justify-content-center text-center'>
-    <TagCloud
-      minSize={sizes.minSize}
-      maxSize={sizes.maxSize}
-      tags={tags}
-      onClick={handleTagClick}
-      className='w-75'
-      style ={{ cursor: "pointer" }}
-    />
-  </div>
-)
+    <div className='d-flex justify-content-center text-center'>
+      <TagCloud
+        minSize={tagSizes.min}
+        maxSize={tagSizes.max}
+        tags={tags}
+        onClick={handleTagClick}
+        className='w-75'
+        style={{ cursor: 'pointer' }}
+      />
+    </div>
+  );
   
   const handleTagClick = async (tag) => {
     const { data } = await userService.getInventoriesByTag(tag.id); 
 
     navigate('/search', { state: { inventories: data.inventories } });
   };
-
-  useEffect(() => {
-    const updateSizes = () => {
-      const width = window.innerWidth;
-      
-      const min = Math.max(25,Math.round(width / MIN_TAG_SIZE_DIVIDER));  
-      const max = Math.min(35, Math.round(width / MAX_TAG_SIZE_DIVIDER));  
-      console.warn(min)
-      setSizes({ minSize: min, maxSize: max });
-    };
-
-    updateSizes();
-
-    window.addEventListener('resize', updateSizes);
-    return () => window.removeEventListener('resize', updateSizes);
-  }, []);
 
   useEffect(() => {
           const fetchData = async () => {
@@ -101,6 +101,7 @@ function MainPage() {
                   const tagNames = result.data.tags.map(tag => ({
                       id: tag.id,
                       value: tag.name,
+                      count: Math.floor(Math.random() * 30) + 1
                   }));
                   setTags(tagNames);
               } catch (err) {
