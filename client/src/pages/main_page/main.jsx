@@ -101,7 +101,6 @@ function MainPage() {
                   const tagNames = result.data.tags.map(tag => ({
                       id: tag.id,
                       value: tag.name,
-                      count: Math.floor(Math.random() * 30) + 1
                   }));
                   setTags(tagNames);
               } catch (err) {

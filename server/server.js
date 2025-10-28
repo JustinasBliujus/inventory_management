@@ -26,7 +26,7 @@ db.sync()
   .then(() => console.log("All models synchronized successfully."))
   .catch((err) => console.error("Error syncing models:", err));
 
-app.set("trust proxy", 1);
+//app.set("trust proxy", 1);
 
 app.use(
   session({
@@ -35,8 +35,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,       
-      sameSite: "none",     
-      secure: true,         
+      sameSite: "lax",     
+      //secure: true,         
     },
   })
 );
