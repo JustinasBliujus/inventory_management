@@ -98,6 +98,7 @@ const resources = {
       "customIdExplanation": "ID will be applied to new elements.",
       "verifyTooltip": "Your account is limited untill verified",
       "searchResultsFor": "Search results for {{name}}",
+      "main": "Main",
     }
   },
   lt: {
@@ -196,6 +197,7 @@ const resources = {
       "customIdExplanation": "ID bus pritaikytas naujiems elementams.",
       "verifyTooltip": "Jūsų paskyra apribota, kol ją patvirtinsite",
       "searchResultsFor": "Paieškos {{name}} rezultatai",
+      "main": "Pagrindinis",
     }
   }
 };

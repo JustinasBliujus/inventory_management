@@ -12,10 +12,12 @@ import { Link } from 'react-router-dom';
 
 function MainPage() {
   const DESCRIPTION_MAX_LENGTH = 20;
+  const MAX_TAG_SIZE_DIVIDER = 20;
+  const MIN_TAG_SIZE_DIVIDER = 40;
   const { darkMode } = useAppContext();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  
+  const [sizes, setSizes] = useState({ minSize: 12, maxSize: 35 });
   const [latestInventories, setLatestInventories] = useState([]);
   const [popularInventories, setPopularInventories] = useState([]);
   const [tags, setTags] = useState([]);
@@ -23,20 +25,37 @@ function MainPage() {
   const SimpleCloud = () => (
   <div className='d-flex justify-content-center text-center'>
     <TagCloud
-      minSize={12}
-      maxSize={35}
+      minSize={sizes.minSize}
+      maxSize={sizes.maxSize}
       tags={tags}
       onClick={handleTagClick}
-      className='d-none d-md-block w-75'
+      className='w-75'
       style ={{ cursor: "pointer" }}
     />
   </div>
 )
+  
   const handleTagClick = async (tag) => {
     const { data } = await userService.getInventoriesByTag(tag.id); 
 
     navigate('/search', { state: { inventories: data.inventories } });
   };
+
+  useEffect(() => {
+    const updateSizes = () => {
+      const width = window.innerWidth;
+      
+      const min = Math.max(25,Math.round(width / MIN_TAG_SIZE_DIVIDER));  
+      const max = Math.min(35, Math.round(width / MAX_TAG_SIZE_DIVIDER));  
+      console.warn(min)
+      setSizes({ minSize: min, maxSize: max });
+    };
+
+    updateSizes();
+
+    window.addEventListener('resize', updateSizes);
+    return () => window.removeEventListener('resize', updateSizes);
+  }, []);
 
   useEffect(() => {
           const fetchData = async () => {
@@ -120,10 +139,9 @@ function MainPage() {
       key: 'creator',
       label: 'Creator',
       sortable: true, 
-      className: 'd-none d-sm-table-cell', 
       render: (value, row) => (
         <Link
-          className="text-decoration-none d-none d-sm-table-cell"
+          className="text-decoration-none"
           relative='route'
           to='/personal'
           state={{ userId: row.user_id, name: row.user.name}}
@@ -164,10 +182,9 @@ function MainPage() {
       key: 'creator_pop', 
       label: 'Creator', 
       sortable: true, 
-      className: 'd-none d-sm-table-cell', 
       render: (value, row) => (
         <Link
-          className="text-decoration-none d-none d-sm-table-cell"
+          className="text-decoration-none"
           to='/personal'
           relative='route'
           state={{ userId: row.user_id, name: row.user.name }}
@@ -182,13 +199,13 @@ function MainPage() {
     <div className="vh-100">
       <SharedNavbar />
       <Container className="mt-5 p-5">
-        <p className="fs-1 d-none d-md-block">{t('chooseTopic')}</p>
+        <p className="fs-1">{t('chooseTopic')}</p>
         {
           tags.length > 0 ? <SimpleCloud /> : <p>{t('noTagsAvailable')}</p>
         }
-        <p className="fs-1 d-none d-md-block">{t('latestInventories')}</p>
+        <p className="fs-1">{t('latestInventories')}</p>
         <DataTable data={latestInventories} columns={latestColumns} itemsPerPage={5} darkMode={darkMode}/>
-        <p className="fs-1 d-none d-md-block">{t('mostPopularInventories')}</p>
+        <p className="fs-1">{t('mostPopularInventories')}</p>
         <DataTable data={popularInventories} columns={popularColumns} itemsPerPage={5} darkMode={darkMode}/>
       </Container>
     </div>
