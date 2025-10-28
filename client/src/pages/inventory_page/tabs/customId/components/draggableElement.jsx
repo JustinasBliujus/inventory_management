@@ -3,6 +3,7 @@ import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import Card from 'react-bootstrap/Card';
 import '../../../../components/darkMode.css'
+import { useTranslation } from 'react-i18next';
 
 function DraggableElement({
   element,
@@ -13,6 +14,7 @@ function DraggableElement({
   scrollContainerRef,
   darkMode
 }) {
+  const { t } = useTranslation();
   const [, dropRef] = useDrop({
     accept: 'element',
     hover: (item, monitor) => {
@@ -104,25 +106,25 @@ function DraggableElement({
             onChange={(e) => handleChange('format', e.target.value)}
             className={darkMode ? 'bg-dark text-white border-secondary' : ''}
           >
-            <option value="decimal">Decimal</option>
-            <option value="hex">Hexadecimal</option>
+            <option value="decimal">{t('decimal')}</option>
+            <option value="hex">{t('hexadecimal')}</option>
           </Form.Select>
         </Form.Group>
       )}
 
       {element.type === 'Date/time' && (
         <Form.Group className="mt-2">
-          <Form.Label>Date Format</Form.Label>
+          <Form.Label>{t('dateFormat')}</Form.Label>
           <Form.Select
             value={element.format}
             onChange={(e) => handleChange('format', e.target.value)}
             className={darkMode ? 'bg-dark text-white border-secondary' : ''}
           >
-            <option value="YYYY">Year only</option>
-            <option value="MM">Month only</option>
-            <option value="DD">Day only</option>
-            <option value="YYYY-MM">Year-Month</option>
-            <option value="YYYY-MM-DD">Year-Month-Day</option>
+            <option value="YYYY">{t('yearOnly')}</option>
+            <option value="MM">{t('monthOnly')}</option>
+            <option value="DD">{t('dayOnly')}</option>
+            <option value="YYYY-MM">{t('yearMonth')}</option>
+            <option value="YYYY-MM-DD">{t('yearMonthDay')}</option>
           </Form.Select>
         </Form.Group>
       )}

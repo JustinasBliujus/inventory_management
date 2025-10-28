@@ -101,6 +101,14 @@ const resources = {
       "main": "Main",
       "addItemToInventory": "Add new item to inventory: {{inventory}}",
       "editItemInInventory": "Change {{inventory}} item",
+      "yearOnly": "Year only",
+      "monthOnly": "Month only",
+      "dayOnly": "Day only",
+      "yearMonth": "Year-month",
+      "yearMonthDay": "Year-month-day",
+      "dateFormat": "Date format",
+      "decimal": "Decimal",
+      "hexadecimal": "Hexadecimal"
     }
   },
   lt: {
@@ -202,6 +210,14 @@ const resources = {
       "main": "Pagrindinis",
       "addItemToInventory": "Pridėkite naują elementą prie: {{inventory}}",
       "editItemInInventory": "Keiskite {{inventory}} elementą",
+      "yearOnly": "Metai",
+      "monthOnly": "Mėnesis",
+      "dayOnly": "Diena",
+      "yearMonth": "Metai-mėnesis",
+      "yearMonthDay": "Metai-mėnesis-diena",
+      "dateFormat": "datos formatas",
+      "decimal": "dešimtainė",
+      "hexadecimal": "šėšioliktainė"
     }
   }
 };
