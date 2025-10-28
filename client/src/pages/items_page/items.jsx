@@ -41,7 +41,7 @@ function ItemsPage() {
     return (
         <div>
         <SharedNavbar></SharedNavbar>
-        <Container className='w-75 my-5'>
+        <Container className='my-5'>
             <Card
                 className={darkMode ? 'bg-dark text-light' : ''}
                 style={darkMode ? { border: '1px solid #555' } : {}}

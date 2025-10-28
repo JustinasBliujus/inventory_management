@@ -99,6 +99,8 @@ const resources = {
       "verifyTooltip": "Your account is limited untill verified",
       "searchResultsFor": "Search results for {{name}}",
       "main": "Main",
+      "addItemToInventory": "Add new item to inventory: {{inventory}}",
+      "editItemInInventory": "Change {{inventory}} item",
     }
   },
   lt: {
@@ -198,6 +200,8 @@ const resources = {
       "verifyTooltip": "Jūsų paskyra apribota, kol ją patvirtinsite",
       "searchResultsFor": "Paieškos {{name}} rezultatai",
       "main": "Pagrindinis",
+      "addItemToInventory": "Pridėkite naują elementą prie: {{inventory}}",
+      "editItemInInventory": "Keiskite {{inventory}} elementą",
     }
   }
 };

@@ -31,7 +31,6 @@ function AddItemsPage() {
         if (type) newElements.push({ type, format, value });
       }
       setElements(newElements);
-      console.log(newElements)
     }, [inventory]);
     
 
@@ -116,11 +115,11 @@ function AddItemsPage() {
       <SharedNavbar />
       <Container className="p-5 mt-2">
         {formFields.length === 0 ? (
-          <p>No custom fields defined for this inventory.</p>
+          <p>{t('noFieldsFounds')}</p>
         ) : (
           <div>
             <h2 className="text-center mb-4">
-              Add New Item to Inventory: {inventory.name}
+              {item_id ? t('editItemInInventory',{inventory: inventory.name}) : t('addItemToInventory',{inventory: inventory.name})}
             </h2>
             <Form onSubmit={handleSubmit}>
               {formFields.map(field => {
@@ -190,7 +189,11 @@ function AddItemsPage() {
                     <Form.Label>{field.name}</Form.Label>
                     {inputElement}
                     {field.desc && (
-                      <Form.Text className="text-muted">{field.desc}</Form.Text>
+                      <Form.Text
+                        style={{ color: darkMode ? 'white' : 'black' }}
+                      >
+                        {field.desc}
+                      </Form.Text>
                     )}
                   </Form.Group>
                 );
