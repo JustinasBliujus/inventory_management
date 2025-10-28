@@ -9,7 +9,7 @@ export default defineConfig({
   preview: {
     host: true,
     allowedHosts: [
-      'abundant-exploration-production.up.railway.app',
+      'ifinal.up.railway.app',
       'localhost'
     ]
   },
