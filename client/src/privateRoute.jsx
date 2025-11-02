@@ -11,14 +11,22 @@ const PrivateRoute = ({ children, requiredRole }) => {
   useEffect(() => {
     const checkLogin = async () => {
       try {
-        const res = await userService.isLoggedIn(); 
-        setUser(res.data.user); 
-        
-        if (requiredRole && !res.data.user[requiredRole]) {
-          navigate('/login', { state: { error: { message: "Access denied" } } });
+        const res = await userService.isLoggedIn();
+        const currentUser = res.data.user;
+
+        if (!currentUser) {
+          navigate('/login', { state: { error: { message: 'Please log in to continue.' } } });
+          return;
         }
-      } catch (err){
-        navigate('/login', { state: { error: { message: err.response?.data?.message || err.message || "Session expired. Please log in again."} } });
+
+        if (requiredRole && !currentUser[requiredRole]) {
+          navigate('/login', { state: { error: { message: 'Access denied' } } });
+          return;
+        }
+
+        setUser(currentUser);
+      } catch (err) {
+        navigate('/login', { state: { error: { message: err.response?.data?.message || err.message || 'Session expired. Please log in again.' } } });
       } finally {
         setLoading(false);
       }
@@ -35,7 +43,8 @@ const PrivateRoute = ({ children, requiredRole }) => {
     );
   }
 
-  if (requiredRole && !user?.[requiredRole]) return null;
+  if (!user) return null;
+  if (requiredRole && !user[requiredRole]) return null;
 
   return children;
 };
