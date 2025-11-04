@@ -115,7 +115,7 @@ function AddItemsPage() {
       <SharedNavbar />
       <Container className="p-5 mt-2">
         {formFields.length === 0 ? (
-          <p>{t('noFieldsFounds')}</p>
+          <p>{t('noFieldsFound')}</p>
         ) : (
           <div>
             <h2 className="text-center mb-4">
